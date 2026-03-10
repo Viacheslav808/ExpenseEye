@@ -8,6 +8,11 @@ android {
     namespace = "com.example.expenseeye"
     compileSdk = 36
 
+    buildFeatures {
+        compose = true
+        viewBinding = true
+        dataBinding = false
+    }
     defaultConfig {
         applicationId = "com.example.expenseeye"
         minSdk = 28
@@ -57,4 +62,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation("androidx.fragment:fragment:1.6.2")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.11.0")
 }

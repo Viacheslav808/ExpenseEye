@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.Toast;
 
 import com.example.expenseeye.R;
 import com.example.expenseeye.repository.settings.SettingsRepository;
@@ -31,23 +33,46 @@ public class SettingsFragment extends Fragment {
 
         settingsViewModel = new SettingsViewModel(
                 new SettingsRepository(requireContext()),
-                new BackupRepository("backup.json")
+                new BackupRepository(new JSONBackupService("backup.json"))
         );
-    }
 
+
+        Button exportButton = view.findViewById(R.id.button_export);
+        Button importButton = view.findViewById(R.id.button_import);
+        Button logoutButton = view.findViewById(R.id.button_logout);
+
+
+        exportButton.setOnClickListener(v -> exportData());
+        importButton.setOnClickListener(v -> importData());
+        logoutButton.setOnClickListener(v -> handleLogout());
+    }
+    private void handleLogout() {
+        Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show();
+        System.out.println("Logout clicked");
+    }
     public void saveSettings(String key, String value) {
         settingsViewModel.changeString(key, value);
         System.out.println("Saved setting: " + key + " = " + value);
     }
 
     public void exportData() {
-        boolean success = settingsViewModel.exportBackup();
-        showBackupResult(success);
+        boolean success = settingsViewModel.exportBackup(requireContext());
+
+        if (success) {
+            Toast.makeText(requireContext(), "Exported JSON file", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(requireContext(), "Export failed", Toast.LENGTH_SHORT).show();
+        }
     }
 
     public void importData() {
-        boolean success = settingsViewModel.restoreBackup();
-        showBackupResult(success);
+        boolean success = settingsViewModel.restoreBackup(requireContext());
+
+        if (success) {
+            Toast.makeText(requireContext(), "Imported JSON file", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(requireContext(), "Import failed", Toast.LENGTH_SHORT).show();
+        }
     }
 
     public void observeSettings() {
