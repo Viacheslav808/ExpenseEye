@@ -1,28 +1,22 @@
 package com.example.expenseeye.repository.backup;
 
+import android.content.Context;
+
+import com.example.expenseeye.service.backup.JSONBackupService;
+
 public class BackupRepository {
-    private String filePath;
 
-    public BackupRepository(String filepath) {
-        this.filePath = filePath;
+    private final JSONBackupService service;
+
+    public BackupRepository(JSONBackupService service) {
+        this.service = service;
     }
 
-    public void setFilePath(String filePatah) {
-        this.filePath = filePath;
+    public boolean exportData(Context context, String json) {
+        return service.exportData(context, json);
     }
 
-    public String getFilePath() {
-        return filePath;
-    }
-    public Boolean exportData() {
-        return true;
-    }
-
-    public Boolean importData() {
-        return true;
-    }
-
-    public void clearBackup() {
-
+    public String importData(Context context) {
+        return service.importData(context);
     }
 }

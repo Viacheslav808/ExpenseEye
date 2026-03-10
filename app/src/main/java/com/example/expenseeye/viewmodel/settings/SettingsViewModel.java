@@ -3,16 +3,23 @@ package com.example.expenseeye.viewmodel.settings;
 import com.example.expenseeye.repository.backup.BackupRepository;
 import com.example.expenseeye.repository.settings.SettingsRepository;
 
+import android.content.Context;
+
+import org.json.JSONObject;
+
+import java.util.Iterator;
+
 public class SettingsViewModel {
+
+    private final SettingsRepository settingsRepository;
+    private final BackupRepository backupRepository;
 
     public SettingsViewModel(SettingsRepository settingsRepository, BackupRepository backupRepository) {
         this.settingsRepository = settingsRepository;
         this.backupRepository = backupRepository;
     }
-    private SettingsRepository settingsRepository;
-    private BackupRepository backupRepository;
 
-    public SettingsRepository getSettingsRepository () {
+    public SettingsRepository getSettingsRepository() {
         return settingsRepository;
     }
 
@@ -21,16 +28,37 @@ public class SettingsViewModel {
     }
 
     public void changeString(String key, String value) {
-        settingsRepository.saveSettings(key,value);
+        settingsRepository.saveSettings(key, value);
     }
 
-    public Boolean exportBackup() {
 
-        return backupRepository.exportData();
+    public boolean exportBackup(Context context) {
+        try {
+            JSONObject json = new JSONObject(settingsRepository.getAllSettings());
+            return backupRepository.exportData(context, json.toString());
+        } catch (Exception e) {
+            return false;
+        }
     }
 
-    public Boolean restoreBackup() {
+    // IMPORT JSON → SETTINGS
+    public boolean restoreBackup(Context context) {
+        try {
+            String jsonString = backupRepository.importData(context);
+            if (jsonString == null) return false;
 
-        return backupRepository.importData();
+            JSONObject json = new JSONObject(jsonString);
+
+            Iterator<String> keys = json.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                settingsRepository.saveSettings(key, json.getString(key));
+            }
+
+            return true;
+
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
