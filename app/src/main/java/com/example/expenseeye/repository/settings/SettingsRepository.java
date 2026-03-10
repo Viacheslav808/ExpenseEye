@@ -27,5 +27,7 @@ public class SettingsRepository {
         prefs.edit().clear().apply();
     }
 
-
+    public Map<String, ?> getAllSettings() {
+        return prefs.getAll();
+    }
 }
