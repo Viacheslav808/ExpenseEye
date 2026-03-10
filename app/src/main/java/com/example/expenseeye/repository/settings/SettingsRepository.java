@@ -1,21 +1,31 @@
 package com.example.expenseeye.repository.settings;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class SettingsRepository {
 
-    public SettingsRepository(String preferencesKey) {
-        this.preferencesKey = preferencesKey;
+    private final SharedPreferences prefs;
+
+    public SettingsRepository(Context context) {
+        this.prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE);
     }
-    private String preferencesKey;
 
     public void saveSettings(String key, String value) {
-
+        prefs.edit().putString(key,value).apply();
     }
 
     public String loadSetting(String key) {
-        return key;
+
+        return prefs.getString(key, null);
     }
 
     public void resetSettings() {
-
+        prefs.edit().clear().apply();
     }
+
+
 }

@@ -20,16 +20,17 @@ public class SettingsViewModel {
         return backupRepository;
     }
 
-    public void changeSting(String key, String value) {
-
+    public void changeString(String key, String value) {
+        settingsRepository.saveSettings(key,value);
     }
 
     public Boolean exportBackup() {
-        return true;
+
+        return backupRepository.exportData();
     }
 
     public Boolean restoreBackup() {
 
-        return true;
+        return backupRepository.importData();
     }
 }
