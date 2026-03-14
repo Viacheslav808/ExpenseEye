@@ -140,10 +140,12 @@ public class FinanceStore {
     }
 
     private void addSafely(JSONArray array, Object value) {
+        // Android's JSONArray#put does not throw checked JSONException.
         array.put(value);
     }
 
     private void putSafely(JSONObject object, String key, Object value) {
+        // JSONObject#putOpt skips null values and also does not throw checked JSONException.
         object.putOpt(key, value);
     }
 
