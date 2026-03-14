@@ -10,6 +10,7 @@ import com.example.expenseeye.model.finance.CategoryRecord;
 import com.example.expenseeye.model.finance.TransactionRecord;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.time.LocalDate;
@@ -334,7 +335,11 @@ public class FinanceStore {
     }
 
     private void putSafely(JSONObject object, String key, Object value) {
-        object.putOpt(key, value);
+        try {
+            object.put(key, value);
+        } catch (JSONException ignored) {
+            // ignore invalid JSON writes to keep store serialization resilient
+        }
     }
 
     private void seedDatabase(SQLiteDatabase db) {
