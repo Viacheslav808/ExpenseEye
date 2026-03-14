@@ -8,6 +8,7 @@ import com.example.expenseeye.R;
 import com.example.expenseeye.ui.HomeFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.example.expenseeye.ui.settings.SettingsFragment;
+import com.example.expenseeye.ui.reports.ReportsFragment;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,6 +24,11 @@ public class MainActivity extends AppCompatActivity {
             if (itemId == R.id.nav_home) {
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.main_fragment_container, new HomeFragment())
+                        .commit();
+                return true;
+            } else if (itemId == R.id.nav_reports) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.main_fragment_container, new ReportsFragment())
                         .commit();
                 return true;
             } else if (itemId == R.id.nav_settings) {
