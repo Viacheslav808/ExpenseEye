@@ -5,6 +5,7 @@ import android.os.Bundle;
 
 import com.example.expenseeye.R;
 
+import com.example.expenseeye.data.FinanceStore;
 import com.example.expenseeye.ui.HomeFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.example.expenseeye.ui.settings.SettingsFragment;
@@ -16,6 +17,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        FinanceStore.getInstance().initialize(getApplicationContext());
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
         bottomNav.setOnItemSelectedListener(item -> {

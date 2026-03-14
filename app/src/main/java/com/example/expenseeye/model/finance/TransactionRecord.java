@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 public class TransactionRecord {
     private final int id;
+    private final String title;
     private final int userId;
     private final int accountId;
     private final int categoryId;
@@ -12,7 +13,12 @@ public class TransactionRecord {
     private final LocalDate date;
 
     public TransactionRecord(int id, int userId, int accountId, int categoryId, String type, double amount, LocalDate date) {
+        this(id, "", userId, accountId, categoryId, type, amount, date);
+    }
+
+    public TransactionRecord(int id, String title, int userId, int accountId, int categoryId, String type, double amount, LocalDate date) {
         this.id = id;
+        this.title = title;
         this.userId = userId;
         this.accountId = accountId;
         this.categoryId = categoryId;
@@ -23,6 +29,10 @@ public class TransactionRecord {
 
     public int getId() {
         return id;
+    }
+
+    public String getTitle() {
+        return title;
     }
 
     public int getUserId() {
