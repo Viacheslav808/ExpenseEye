@@ -5,7 +5,6 @@ import com.example.expenseeye.model.finance.CategoryRecord;
 import com.example.expenseeye.model.finance.TransactionRecord;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.time.LocalDate;
@@ -141,19 +140,11 @@ public class FinanceStore {
     }
 
     private void addSafely(JSONArray array, Object value) {
-        try {
-            array.put(value);
-        } catch (JSONException exception) {
-            throw new IllegalStateException("Unable to serialize finance store", exception);
-        }
+        array.put(value);
     }
 
     private void putSafely(JSONObject object, String key, Object value) {
-        try {
-            object.put(key, value);
-        } catch (JSONException exception) {
-            throw new IllegalStateException("Unable to serialize finance store", exception);
-        }
+        object.putOpt(key, value);
     }
 
     private void seed() {
