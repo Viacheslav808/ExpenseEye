@@ -108,7 +108,7 @@ public class FinanceStore {
             putSafely(item, "id", account.getId());
             putSafely(item, "userId", account.getUserId());
             putSafely(item, "name", account.getName());
-            array.put(item);
+            addSafely(array, item);
         }
         return array;
     }
@@ -119,7 +119,7 @@ public class FinanceStore {
             JSONObject item = new JSONObject();
             putSafely(item, "id", category.getId());
             putSafely(item, "name", category.getName());
-            array.put(item);
+            addSafely(array, item);
         }
         return array;
     }
@@ -135,9 +135,17 @@ public class FinanceStore {
             putSafely(item, "type", transaction.getType());
             putSafely(item, "amount", transaction.getAmount());
             putSafely(item, "date", transaction.getDate().toString());
-            array.put(item);
+            addSafely(array, item);
         }
         return array;
+    }
+
+    private void addSafely(JSONArray array, Object value) {
+        try {
+            array.put(value);
+        } catch (JSONException exception) {
+            throw new IllegalStateException("Unable to serialize finance store", exception);
+        }
     }
 
     private void putSafely(JSONObject object, String key, Object value) {
