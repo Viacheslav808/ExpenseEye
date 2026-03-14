@@ -12,16 +12,29 @@ import com.example.expenseeye.R;
 import com.example.expenseeye.model.reports.AccountSummary;
 
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 public class AccountSummaryAdapter extends RecyclerView.Adapter<AccountSummaryAdapter.AccountSummaryViewHolder> {
 
-    private final List<AccountSummary> items;
-    private final NumberFormat currency = NumberFormat.getCurrencyInstance(Locale.CANADA);
+    public interface OnAccountClickListener {
+        void onAccountClick(AccountSummary accountSummary);
+    }
 
-    public AccountSummaryAdapter(List<AccountSummary> items) {
-        this.items = items;
+    private final List<AccountSummary> items = new ArrayList<>();
+    private final NumberFormat currency = NumberFormat.getCurrencyInstance(Locale.CANADA);
+    private final OnAccountClickListener onAccountClickListener;
+
+    public AccountSummaryAdapter(List<AccountSummary> items, OnAccountClickListener onAccountClickListener) {
+        this.items.addAll(items);
+        this.onAccountClickListener = onAccountClickListener;
+    }
+
+    public void replaceItems(List<AccountSummary> newItems) {
+        items.clear();
+        items.addAll(newItems);
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -38,6 +51,7 @@ public class AccountSummaryAdapter extends RecyclerView.Adapter<AccountSummaryAd
         holder.incomeText.setText("Income: " + currency.format(item.getIncome()));
         holder.expenseText.setText("Expense: " + currency.format(item.getExpense()));
         holder.netText.setText("Net: " + currency.format(item.getNet()));
+        holder.itemView.setOnClickListener(v -> onAccountClickListener.onAccountClick(item));
     }
 
     @Override

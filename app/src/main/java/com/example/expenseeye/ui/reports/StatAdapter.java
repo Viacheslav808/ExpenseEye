@@ -10,24 +10,39 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.expenseeye.R;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class StatAdapter extends RecyclerView.Adapter<StatAdapter.StatViewHolder> {
 
+    public interface OnStatClickListener {
+        void onStatClick(StatItem item);
+    }
+
     public static class StatItem {
         public final String label;
         public final String value;
+        public final double amount;
 
-        public StatItem(String label, String value) {
+        public StatItem(String label, String value, double amount) {
             this.label = label;
             this.value = value;
+            this.amount = amount;
         }
     }
 
-    private final List<StatItem> items;
+    private final List<StatItem> items = new ArrayList<>();
+    private final OnStatClickListener onStatClickListener;
 
-    public StatAdapter(List<StatItem> items) {
-        this.items = items;
+    public StatAdapter(List<StatItem> items, OnStatClickListener onStatClickListener) {
+        this.items.addAll(items);
+        this.onStatClickListener = onStatClickListener;
+    }
+
+    public void replaceItems(List<StatItem> newItems) {
+        items.clear();
+        items.addAll(newItems);
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -42,6 +57,7 @@ public class StatAdapter extends RecyclerView.Adapter<StatAdapter.StatViewHolder
         StatItem item = items.get(position);
         holder.labelText.setText(item.label);
         holder.valueText.setText(item.value);
+        holder.itemView.setOnClickListener(v -> onStatClickListener.onStatClick(item));
     }
 
     @Override
