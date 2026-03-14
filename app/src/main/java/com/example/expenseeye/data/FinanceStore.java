@@ -10,7 +10,6 @@ import org.json.JSONObject;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class FinanceStore {
@@ -164,21 +163,19 @@ public class FinanceStore {
         categories.add(new CategoryRecord(5, "Dining"));
         categories.add(new CategoryRecord(6, "Utilities"));
 
-        Collections.addAll(transactions,
-                new TransactionRecord(1, 1001, 1, 1, "income", 3300, LocalDate.of(2026, 1, 2)),
-                new TransactionRecord(2, 1001, 1, 2, "expense", 930, LocalDate.of(2026, 1, 5)),
-                new TransactionRecord(3, 1001, 2, 3, "expense", 260, LocalDate.of(2026, 1, 10)),
-                new TransactionRecord(4, 1001, 2, 4, "expense", 120, LocalDate.of(2026, 1, 16)),
-                new TransactionRecord(5, 1001, 1, 1, "income", 3400, LocalDate.of(2026, 2, 2)),
-                new TransactionRecord(6, 1001, 1, 2, "expense", 930, LocalDate.of(2026, 2, 5)),
-                new TransactionRecord(7, 1001, 2, 3, "expense", 290, LocalDate.of(2026, 2, 10)),
-                new TransactionRecord(8, 1001, 2, 5, "expense", 220, LocalDate.of(2026, 2, 18)),
-                new TransactionRecord(9, 1001, 1, 6, "expense", 145, LocalDate.of(2026, 2, 21)),
-                new TransactionRecord(10, 1001, 1, 1, "income", 3400, LocalDate.of(2026, 3, 2)),
-                new TransactionRecord(11, 1001, 1, 2, "expense", 930, LocalDate.of(2026, 3, 5)),
-                new TransactionRecord(12, 1001, 2, 3, "expense", 310, LocalDate.of(2026, 3, 11)),
-                new TransactionRecord(13, 1001, 2, 4, "expense", 160, LocalDate.of(2026, 3, 15)),
-                new TransactionRecord(14, 1001, 2, 5, "expense", 205, LocalDate.of(2026, 3, 23))
-        );
+        transactions.add(new TransactionRecord(1, 1001, 1, 1, "income", 3300, LocalDate.of(2026, 1, 2)));
+        transactions.add(new TransactionRecord(2, 1001, 1, 2, "expense", 930, LocalDate.of(2026, 1, 5)));
+        transactions.add(new TransactionRecord(3, 1001, 2, 3, "expense", 260, LocalDate.of(2026, 1, 10)));
+        transactions.add(new TransactionRecord(4, 1001, 2, 4, "expense", 120, LocalDate.of(2026, 1, 16)));
+        transactions.add(new TransactionRecord(5, 1001, 1, 1, "income", 3400, LocalDate.of(2026, 2, 2)));
+        transactions.add(new TransactionRecord(6, 1001, 1, 2, "expense", 930, LocalDate.of(2026, 2, 5)));
+        transactions.add(new TransactionRecord(7, 1001, 2, 3, "expense", 290, LocalDate.of(2026, 2, 10)));
+        transactions.add(new TransactionRecord(8, 1001, 2, 5, "expense", 220, LocalDate.of(2026, 2, 18)));
+        transactions.add(new TransactionRecord(9, 1001, 1, 6, "expense", 145, LocalDate.of(2026, 2, 21)));
+        transactions.add(new TransactionRecord(10, 1001, 1, 1, "income", 3400, LocalDate.of(2026, 3, 2)));
+        transactions.add(new TransactionRecord(11, 1001, 1, 2, "expense", 930, LocalDate.of(2026, 3, 5)));
+        transactions.add(new TransactionRecord(12, 1001, 2, 3, "expense", 310, LocalDate.of(2026, 3, 11)));
+        transactions.add(new TransactionRecord(13, 1001, 2, 4, "expense", 160, LocalDate.of(2026, 3, 15)));
+        transactions.add(new TransactionRecord(14, 1001, 2, 5, "expense", 205, LocalDate.of(2026, 3, 23)));
     }
 }
