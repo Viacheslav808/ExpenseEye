@@ -1,26 +1,39 @@
 package com.example.expenseeye.service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class NotifcationService {
 
-    private String alertType;
-    private String message;
+    private final Integer userId;
+    private final List<String> sentMessages = new ArrayList<>();
 
-    private Integer userid;
-
-    public NotifcationService(Integer userid, String alertType, String message) {
-        this.userid = userid;
-        this.alertType = alertType;
-        this.message = message;
-    }
-    public void sendBudgetAlert(Integer userid, String message) {
-
+    public NotifcationService(Integer userId, String alertType, String message) {
+        this.userId = userId;
+        sentMessages.add(format(alertType, message, null, null));
     }
 
-    public void sendWarning(Integer userid, String message) {
-
+    public void sendBudgetAlert(Integer userId, Integer transactionId, Integer categoryId, String message) {
+        sentMessages.add(format("budget", message, transactionId, categoryId));
     }
 
-    public void scheduleNotifcation(Integer userid, Long date, String message) {
+    public void sendWarning(Integer userId, Integer transactionId, Integer categoryId, String message) {
+        sentMessages.add(format("warning", message, transactionId, categoryId));
+    }
 
+    public void scheduleNotifcation(Integer userId, Long date, Integer transactionId, Integer categoryId, String message) {
+        sentMessages.add(date + ":" + format("scheduled", message, transactionId, categoryId));
+    }
+
+    public List<String> history() {
+        return new ArrayList<>(sentMessages);
+    }
+
+    private String format(String type, String message, Integer transactionId, Integer categoryId) {
+        return "user=" + userId
+                + "|type=" + type
+                + "|transactionId=" + (transactionId == null ? "n/a" : transactionId)
+                + "|categoryId=" + (categoryId == null ? "n/a" : categoryId)
+                + "|message=" + message;
     }
 }

@@ -1,10 +1,13 @@
 package com.example.expenseeye.repository.reports;
 
+import com.example.expenseeye.data.FinanceStore;
+import com.example.expenseeye.model.finance.AccountRecord;
+import com.example.expenseeye.model.finance.CategoryRecord;
+import com.example.expenseeye.model.finance.TransactionRecord;
 import com.example.expenseeye.model.reports.AccountSummary;
 import com.example.expenseeye.model.reports.CategoryTotal;
 import com.example.expenseeye.model.reports.MonthlySpending;
 
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -13,26 +16,28 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Reports repository.
- *
- * For this milestone, it aggregates from an internal transaction sample set so the reports screen
- * can be demoed without changing teammates' finance/auth implementations.
- *
- * Integration point: replace sampleRows() with TransactionDao/CategoryDao/AccountDao queries.
- */
 public class ReportRepo {
+
+    private final FinanceStore financeStore;
+
+    public ReportRepo() {
+        this(FinanceStore.getInstance());
+    }
+
+    public ReportRepo(FinanceStore financeStore) {
+        this.financeStore = financeStore;
+    }
 
     public List<MonthlySpending> getMonthlySpending() {
         Map<String, Double> totals = new HashMap<>();
         DateTimeFormatter monthFormat = DateTimeFormatter.ofPattern("MMM yyyy", Locale.US);
 
-        for (TransactionRow row : sampleRows()) {
-            if (!"expense".equalsIgnoreCase(row.type)) {
+        for (TransactionRecord row : financeStore.getTransactions()) {
+            if (!"expense".equalsIgnoreCase(row.getType())) {
                 continue;
             }
-            String key = row.date.withDayOfMonth(1).format(monthFormat);
-            totals.put(key, totals.getOrDefault(key, 0.0) + row.amount);
+            String key = row.getDate().withDayOfMonth(1).format(monthFormat);
+            totals.put(key, totals.getOrDefault(key, 0.0) + row.getAmount());
         }
 
         List<MonthlySpending> result = new ArrayList<>();
@@ -44,13 +49,18 @@ public class ReportRepo {
     }
 
     public List<CategoryTotal> getCategoryTotals() {
-        Map<String, Double> totals = new HashMap<>();
+        Map<Integer, String> categoryNames = new HashMap<>();
+        for (CategoryRecord category : financeStore.getCategories()) {
+            categoryNames.put(category.getId(), category.getName());
+        }
 
-        for (TransactionRow row : sampleRows()) {
-            if (!"expense".equalsIgnoreCase(row.type)) {
+        Map<String, Double> totals = new HashMap<>();
+        for (TransactionRecord row : financeStore.getTransactions()) {
+            if (!"expense".equalsIgnoreCase(row.getType())) {
                 continue;
             }
-            totals.put(row.category, totals.getOrDefault(row.category, 0.0) + row.amount);
+            String categoryName = categoryNames.getOrDefault(row.getCategoryId(), "Unknown");
+            totals.put(categoryName, totals.getOrDefault(categoryName, 0.0) + row.getAmount());
         }
 
         List<CategoryTotal> result = new ArrayList<>();
@@ -62,75 +72,46 @@ public class ReportRepo {
     }
 
     public List<AccountSummary> getAccountSummaries() {
-        Map<String, Double> income = new HashMap<>();
-        Map<String, Double> expense = new HashMap<>();
+        Map<Integer, String> accountNames = new HashMap<>();
+        for (AccountRecord account : financeStore.getAccounts()) {
+            accountNames.put(account.getId(), account.getName());
+        }
 
-        for (TransactionRow row : sampleRows()) {
-            if ("income".equalsIgnoreCase(row.type)) {
-                income.put(row.account, income.getOrDefault(row.account, 0.0) + row.amount);
+        Map<Integer, Double> income = new HashMap<>();
+        Map<Integer, Double> expense = new HashMap<>();
+
+        for (TransactionRecord row : financeStore.getTransactions()) {
+            if ("income".equalsIgnoreCase(row.getType())) {
+                income.put(row.getAccountId(), income.getOrDefault(row.getAccountId(), 0.0) + row.getAmount());
             } else {
-                expense.put(row.account, expense.getOrDefault(row.account, 0.0) + row.amount);
+                expense.put(row.getAccountId(), expense.getOrDefault(row.getAccountId(), 0.0) + row.getAmount());
             }
         }
 
         List<AccountSummary> result = new ArrayList<>();
-        for (String account : allAccounts(income, expense)) {
+        for (Integer accountId : allAccountIds(accountNames, income, expense)) {
             result.add(new AccountSummary(
-                    account,
-                    income.getOrDefault(account, 0.0),
-                    expense.getOrDefault(account, 0.0)
+                    accountNames.getOrDefault(accountId, "Unknown"),
+                    income.getOrDefault(accountId, 0.0),
+                    expense.getOrDefault(accountId, 0.0)
             ));
         }
         result.sort((a, b) -> Double.compare(b.getNet(), a.getNet()));
         return result;
     }
 
-    private List<String> allAccounts(Map<String, Double> income, Map<String, Double> expense) {
-        List<String> accounts = new ArrayList<>(income.keySet());
-        for (String account : expense.keySet()) {
-            if (!accounts.contains(account)) {
-                accounts.add(account);
+    private List<Integer> allAccountIds(Map<Integer, String> accountNames, Map<Integer, Double> income, Map<Integer, Double> expense) {
+        List<Integer> accountIds = new ArrayList<>(accountNames.keySet());
+        for (Integer account : income.keySet()) {
+            if (!accountIds.contains(account)) {
+                accountIds.add(account);
             }
         }
-        return accounts;
-    }
-
-    private List<TransactionRow> sampleRows() {
-        List<TransactionRow> rows = new ArrayList<>();
-
-        rows.add(new TransactionRow("income", 3300, "Salary", "Chequing", LocalDate.of(2026, 1, 2)));
-        rows.add(new TransactionRow("expense", 930, "Rent", "Chequing", LocalDate.of(2026, 1, 5)));
-        rows.add(new TransactionRow("expense", 260, "Groceries", "Credit Card", LocalDate.of(2026, 1, 10)));
-        rows.add(new TransactionRow("expense", 120, "Transport", "Credit Card", LocalDate.of(2026, 1, 16)));
-
-        rows.add(new TransactionRow("income", 3400, "Salary", "Chequing", LocalDate.of(2026, 2, 2)));
-        rows.add(new TransactionRow("expense", 930, "Rent", "Chequing", LocalDate.of(2026, 2, 5)));
-        rows.add(new TransactionRow("expense", 290, "Groceries", "Credit Card", LocalDate.of(2026, 2, 10)));
-        rows.add(new TransactionRow("expense", 220, "Dining", "Credit Card", LocalDate.of(2026, 2, 18)));
-        rows.add(new TransactionRow("expense", 145, "Utilities", "Chequing", LocalDate.of(2026, 2, 21)));
-
-        rows.add(new TransactionRow("income", 3400, "Salary", "Chequing", LocalDate.of(2026, 3, 2)));
-        rows.add(new TransactionRow("expense", 930, "Rent", "Chequing", LocalDate.of(2026, 3, 5)));
-        rows.add(new TransactionRow("expense", 310, "Groceries", "Credit Card", LocalDate.of(2026, 3, 11)));
-        rows.add(new TransactionRow("expense", 160, "Transport", "Credit Card", LocalDate.of(2026, 3, 15)));
-        rows.add(new TransactionRow("expense", 205, "Dining", "Credit Card", LocalDate.of(2026, 3, 23)));
-
-        return rows;
-    }
-
-    private static class TransactionRow {
-        final String type;
-        final double amount;
-        final String category;
-        final String account;
-        final LocalDate date;
-
-        TransactionRow(String type, double amount, String category, String account, LocalDate date) {
-            this.type = type;
-            this.amount = amount;
-            this.category = category;
-            this.account = account;
-            this.date = date;
+        for (Integer account : expense.keySet()) {
+            if (!accountIds.contains(account)) {
+                accountIds.add(account);
+            }
         }
+        return accountIds;
     }
 }

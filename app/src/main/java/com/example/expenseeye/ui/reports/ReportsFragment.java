@@ -10,6 +10,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.LifecycleOwner;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -55,15 +56,9 @@ public class ReportsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         ReportsViewModel viewModel = new ReportsViewModel(new ReportRepo());
-        monthly = viewModel.monthlySpending();
-        categories = viewModel.categoryTotals();
-        accounts = viewModel.accountSummaries();
 
         TextView monthlyTotalText = view.findViewById(R.id.text_monthly_total);
         TextView monthlyCaptionText = view.findViewById(R.id.text_monthly_caption);
-
-        monthlyTotalText.setText(currency.format(totalMonthlySpending(monthly)));
-        monthlyCaptionText.setText("Across " + monthly.size() + " months of tracked expenses");
 
         RecyclerView monthlyList = view.findViewById(R.id.list_monthly_spending);
         RecyclerView categoryList = view.findViewById(R.id.list_category_totals);
@@ -99,6 +94,22 @@ public class ReportsFragment extends Fragment {
         });
 
         shareButton.setOnClickListener(v -> shareReport());
+
+        LifecycleOwner owner = getViewLifecycleOwner();
+        viewModel.monthlySpending().observe(owner, items -> {
+            monthly = items == null ? new ArrayList<>() : new ArrayList<>(items);
+            monthlyTotalText.setText(currency.format(totalMonthlySpending(monthly)));
+            monthlyCaptionText.setText("Across " + monthly.size() + " months of tracked expenses");
+            monthlyAdapter.replaceItems(toMonthlyStatItems(monthly));
+        });
+        viewModel.categoryTotals().observe(owner, items -> {
+            categories = items == null ? new ArrayList<>() : new ArrayList<>(items);
+            categoryAdapter.replaceItems(toCategoryStatItems(categories));
+        });
+        viewModel.accountSummaries().observe(owner, items -> {
+            accounts = items == null ? new ArrayList<>() : new ArrayList<>(items);
+            accountAdapter.replaceItems(accounts);
+        });
     }
 
     private double totalMonthlySpending(List<MonthlySpending> monthlyRows) {
