@@ -5,6 +5,7 @@ import com.example.expenseeye.model.finance.CategoryRecord;
 import com.example.expenseeye.model.finance.TransactionRecord;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.time.LocalDate;
@@ -40,9 +41,9 @@ public class FinanceStore {
 
     public synchronized JSONObject toJson() {
         JSONObject root = new JSONObject();
-        root.put("accounts", accountsToJson());
-        root.put("categories", categoriesToJson());
-        root.put("transactions", transactionsToJson());
+        putSafely(root, "accounts", accountsToJson());
+        putSafely(root, "categories", categoriesToJson());
+        putSafely(root, "transactions", transactionsToJson());
         return root;
     }
 
@@ -105,9 +106,9 @@ public class FinanceStore {
         JSONArray array = new JSONArray();
         for (AccountRecord account : accounts) {
             JSONObject item = new JSONObject();
-            item.put("id", account.getId());
-            item.put("userId", account.getUserId());
-            item.put("name", account.getName());
+            putSafely(item, "id", account.getId());
+            putSafely(item, "userId", account.getUserId());
+            putSafely(item, "name", account.getName());
             array.put(item);
         }
         return array;
@@ -117,8 +118,8 @@ public class FinanceStore {
         JSONArray array = new JSONArray();
         for (CategoryRecord category : categories) {
             JSONObject item = new JSONObject();
-            item.put("id", category.getId());
-            item.put("name", category.getName());
+            putSafely(item, "id", category.getId());
+            putSafely(item, "name", category.getName());
             array.put(item);
         }
         return array;
@@ -128,16 +129,24 @@ public class FinanceStore {
         JSONArray array = new JSONArray();
         for (TransactionRecord transaction : transactions) {
             JSONObject item = new JSONObject();
-            item.put("id", transaction.getId());
-            item.put("userId", transaction.getUserId());
-            item.put("accountId", transaction.getAccountId());
-            item.put("categoryId", transaction.getCategoryId());
-            item.put("type", transaction.getType());
-            item.put("amount", transaction.getAmount());
-            item.put("date", transaction.getDate().toString());
+            putSafely(item, "id", transaction.getId());
+            putSafely(item, "userId", transaction.getUserId());
+            putSafely(item, "accountId", transaction.getAccountId());
+            putSafely(item, "categoryId", transaction.getCategoryId());
+            putSafely(item, "type", transaction.getType());
+            putSafely(item, "amount", transaction.getAmount());
+            putSafely(item, "date", transaction.getDate().toString());
             array.put(item);
         }
         return array;
+    }
+
+    private void putSafely(JSONObject object, String key, Object value) {
+        try {
+            object.put(key, value);
+        } catch (JSONException exception) {
+            throw new IllegalStateException("Unable to serialize finance store", exception);
+        }
     }
 
     private void seed() {
