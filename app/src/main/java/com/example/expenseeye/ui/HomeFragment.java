@@ -16,16 +16,21 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.expenseeye.R;
+import com.example.expenseeye.data.FinanceStore;
+import com.example.expenseeye.model.finance.AccountRecord;
+import com.example.expenseeye.model.finance.CategoryRecord;
+import com.example.expenseeye.model.finance.TransactionRecord;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class HomeFragment extends Fragment {
-    private static final String[] ACCOUNT_CHOICES = {"Cash", "Bank Account", "Credit Card"};
-    private static final String[] CATEGORY_CHOICES = {"Food", "Transport", "Shopping", "Bills", "Entertainment"};
 
     private final List<TransactionListItem> transactions = new ArrayList<>();
+    private final FinanceStore financeStore = FinanceStore.getInstance();
     private TransactionAdapter adapter;
 
     public HomeFragment() {
@@ -42,20 +47,35 @@ public class HomeFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
-        loadInitialTransactions();
+        loadTransactionsFromStore();
         fab.setOnClickListener(v -> showAddTransactionDialog());
 
         return root;
     }
 
-    private void loadInitialTransactions() {
-        if (!transactions.isEmpty()) {
-            return;
+    private void loadTransactionsFromStore() {
+        List<AccountRecord> accounts = financeStore.getAccounts();
+        List<CategoryRecord> categories = financeStore.getCategories();
+        Map<Integer, String> accountNames = new HashMap<>();
+        Map<Integer, String> categoryNames = new HashMap<>();
+
+        for (AccountRecord account : accounts) {
+            accountNames.put(account.getId(), account.getName());
         }
-        transactions.add(new TransactionListItem("test4", 4.00, "Cash", "Entertainment"));
-        transactions.add(new TransactionListItem("test3", 3.00, "Credit Card", "Food"));
-        transactions.add(new TransactionListItem("test2", 2.00, "Bank Account", "Food"));
-        transactions.add(new TransactionListItem("test", 1.00, "Cash", "Food"));
+        for (CategoryRecord category : categories) {
+            categoryNames.put(category.getId(), category.getName());
+        }
+
+        transactions.clear();
+        for (TransactionRecord row : financeStore.getTransactions()) {
+            if (!"expense".equalsIgnoreCase(row.getType())) {
+                continue;
+            }
+            String title = row.getTitle().isEmpty() ? categoryNames.getOrDefault(row.getCategoryId(), "Expense") : row.getTitle();
+            String accountName = accountNames.getOrDefault(row.getAccountId(), "Unknown");
+            String categoryName = categoryNames.getOrDefault(row.getCategoryId(), "Unknown");
+            transactions.add(new TransactionListItem(title, row.getAmount(), accountName, categoryName));
+        }
         adapter.notifyDataSetChanged();
     }
 
@@ -69,11 +89,22 @@ public class HomeFragment extends Fragment {
         Spinner categorySpinner = dialogView.findViewById(R.id.category_spinner);
         Button saveButton = dialogView.findViewById(R.id.save_transaction);
 
-        ArrayAdapter<String> accountAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, ACCOUNT_CHOICES);
+        List<String> accountChoices = new ArrayList<>();
+        for (AccountRecord account : financeStore.getAccounts()) {
+            accountChoices.add(account.getName());
+        }
+        List<String> categoryChoices = new ArrayList<>();
+        for (CategoryRecord category : financeStore.getCategories()) {
+            if (!"Salary".equalsIgnoreCase(category.getName())) {
+                categoryChoices.add(category.getName());
+            }
+        }
+
+        ArrayAdapter<String> accountAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, accountChoices);
         accountAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         accountSpinner.setAdapter(accountAdapter);
 
-        ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, CATEGORY_CHOICES);
+        ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, categoryChoices);
         categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         categorySpinner.setAdapter(categoryAdapter);
 
@@ -99,8 +130,8 @@ public class HomeFragment extends Fragment {
             String account = (String) accountSpinner.getSelectedItem();
             String category = (String) categorySpinner.getSelectedItem();
 
-            transactions.add(0, new TransactionListItem(name, amount, account, category));
-            adapter.notifyItemInserted(0);
+            financeStore.addExpenseTransaction(name, amount, account, category);
+            loadTransactionsFromStore();
             dialog.dismiss();
         });
 
