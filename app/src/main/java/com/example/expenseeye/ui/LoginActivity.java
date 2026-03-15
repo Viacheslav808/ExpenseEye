@@ -1,5 +1,6 @@
 package com.example.expenseeye.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.Button;
@@ -8,6 +9,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.expenseeye.MainActivity;
 import com.example.expenseeye.R;
 import com.example.expenseeye.viewmodel.auth.LoginViewModel;
 
@@ -86,6 +88,10 @@ public class LoginActivity extends AppCompatActivity {
 
         if (success) {
             textStatus.setText("Login successful.");
+
+            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+            startActivity(intent);
+            finish();
         } else {
             textStatus.setText("Invalid email or password.");
         }
