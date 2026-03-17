@@ -3,6 +3,7 @@ package com.example.expenseeye.ui;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -19,11 +20,16 @@ public class LoginActivity extends AppCompatActivity {
     private EditText editEmail;
     private EditText editPassword;
     private EditText editConfirmPassword;
-    private Button buttonRegister;
-    private Button buttonLogin;
+
+    private Button buttonPrimaryAction;
+    private TextView textToggleMode;
+    private TextView textTitle;
+    private TextView textSubtitle;
     private TextView textStatus;
 
     private LoginViewModel loginViewModel;
+
+    private boolean isRegisterMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,12 +42,45 @@ public class LoginActivity extends AppCompatActivity {
         editEmail = findViewById(R.id.editEmail);
         editPassword = findViewById(R.id.editPassword);
         editConfirmPassword = findViewById(R.id.editConfirmPassword);
-        buttonRegister = findViewById(R.id.buttonRegister);
-        buttonLogin = findViewById(R.id.buttonLogin);
+
+        buttonPrimaryAction = findViewById(R.id.buttonPrimaryAction);
+        textToggleMode = findViewById(R.id.textToggleMode);
+        textTitle = findViewById(R.id.textTitle);
+        textSubtitle = findViewById(R.id.textSubtitle);
         textStatus = findViewById(R.id.textStatus);
 
-        buttonRegister.setOnClickListener(v -> handleRegister());
-        buttonLogin.setOnClickListener(v -> handleLogin());
+        updateModeUI();
+
+        buttonPrimaryAction.setOnClickListener(v -> {
+            if (isRegisterMode) {
+                handleRegister();
+            } else {
+                handleLogin();
+            }
+        });
+
+        textToggleMode.setOnClickListener(v -> {
+            isRegisterMode = !isRegisterMode;
+            clearFields();
+            textStatus.setText("");
+            updateModeUI();
+        });
+    }
+
+    private void updateModeUI() {
+        if (isRegisterMode) {
+            textSubtitle.setText("Create your account");
+            editName.setVisibility(View.VISIBLE);
+            editConfirmPassword.setVisibility(View.VISIBLE);
+            buttonPrimaryAction.setText("Register");
+            textToggleMode.setText("Already have an account? Login");
+        } else {
+            textSubtitle.setText("Sign in to continue");
+            editName.setVisibility(View.GONE);
+            editConfirmPassword.setVisibility(View.GONE);
+            buttonPrimaryAction.setText("Login");
+            textToggleMode.setText("Need an account? Register");
+        }
     }
 
     private void handleRegister() {
@@ -52,7 +91,7 @@ public class LoginActivity extends AppCompatActivity {
 
         if (TextUtils.isEmpty(name) || TextUtils.isEmpty(email)
                 || TextUtils.isEmpty(password) || TextUtils.isEmpty(confirmPassword)) {
-            textStatus.setText("Please fill in all registration fields.");
+            textStatus.setText("Please fill in all required fields.");
             return;
         }
 
@@ -69,7 +108,10 @@ public class LoginActivity extends AppCompatActivity {
         boolean success = loginViewModel.register(name, email, password);
 
         if (success) {
-            textStatus.setText("Registration successful.");
+            textStatus.setText("Registration successful. You can now log in.");
+            isRegisterMode = false;
+            clearFields();
+            updateModeUI();
         } else {
             textStatus.setText("Registration failed. Email may already exist.");
         }
@@ -95,5 +137,12 @@ public class LoginActivity extends AppCompatActivity {
         } else {
             textStatus.setText("Invalid email or password.");
         }
+    }
+
+    private void clearFields() {
+        editName.setText("");
+        editEmail.setText("");
+        editPassword.setText("");
+        editConfirmPassword.setText("");
     }
 }
