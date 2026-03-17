@@ -11,4 +11,9 @@
         android:icon="@drawable/ic_settings"
         android:title="Settings" />
 
+    <item
+        android:id="@+id/nav_transactions"
+        android:icon="@drawable/ic_list"
+        android:title="Transactions" />
+
 </menu>
