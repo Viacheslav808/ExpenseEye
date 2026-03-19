@@ -12,6 +12,8 @@ import com.example.expenseeye.data.model.Account;
 import com.example.expenseeye.data.model.Category;
 import com.example.expenseeye.data.model.Transaction;
 import com.example.expenseeye.data.model.TransactionWithDetails;
+import com.example.expenseeye.service.NotificationService;
+
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -29,6 +31,9 @@ public class FinanceRepo {
 
     private final ExecutorService executorService;
 
+    private final NotificationService notificationService;
+
+
     public FinanceRepo(Context context) {
 
         ExpenseEyeDatabase db = ExpenseEyeDatabase.getInstance(context);
@@ -38,6 +43,8 @@ public class FinanceRepo {
         categoryDao = db.categoryDao();
 
         executorService = Executors.newSingleThreadExecutor();
+
+        notificationService = new NotificationService(context);
 
         // Ensure default data exists so FK constraints never fail
         createDefaultAccountAndCategory();
@@ -114,6 +121,7 @@ public class FinanceRepo {
     // Transaction operations
     public void insertTransaction(Transaction transaction) {
         executorService.execute(() -> transactionDao.insert(transaction));
+        notificationService.runChecks();
     }
 
     public void deleteTransaction(Transaction transaction) {
