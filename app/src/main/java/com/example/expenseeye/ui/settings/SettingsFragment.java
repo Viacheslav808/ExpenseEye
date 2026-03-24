@@ -1,6 +1,8 @@
 package com.example.expenseeye.ui.settings;
 
 import androidx.fragment.app.Fragment;
+
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,6 +14,7 @@ import com.example.expenseeye.R;
 import com.example.expenseeye.repository.settings.SettingsRepository;
 import com.example.expenseeye.repository.backup.BackupRepository;
 import com.example.expenseeye.service.backup.JSONBackupService;
+import com.example.expenseeye.ui.LoginActivity;
 import com.example.expenseeye.viewmodel.settings.SettingsViewModel;
 
 public class SettingsFragment extends Fragment {
@@ -47,9 +50,16 @@ public class SettingsFragment extends Fragment {
         logoutButton.setOnClickListener(v -> handleLogout());
     }
     private void handleLogout() {
+        Intent intent = new Intent(requireContext(), LoginActivity.class);
+
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        startActivity(intent);
+        requireActivity().finish();
+
         Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show();
-        System.out.println("Logout clicked");
     }
+
     public void saveSettings(String key, String value) {
         settingsViewModel.changeString(key, value);
         System.out.println("Saved setting: " + key + " = " + value);
