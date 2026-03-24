@@ -48,9 +48,9 @@ public class AccountSummaryAdapter extends RecyclerView.Adapter<AccountSummaryAd
     public void onBindViewHolder(@NonNull AccountSummaryViewHolder holder, int position) {
         AccountSummary item = items.get(position);
         holder.accountNameText.setText(item.getAccountName());
-        holder.incomeText.setText("Income: " + currency.format(item.getIncome()));
-        holder.expenseText.setText("Expense: " + currency.format(item.getExpense()));
-        holder.netText.setText("Net: " + currency.format(item.getNet()));
+        holder.incomeText.setText("Spent: " + currency.format(item.getTotalSpent()));
+        holder.expenseText.setText("Transactions: " + item.getTransactionCount());
+        holder.netText.setText("Average: " + currency.format(item.getAverageAmount()));
         holder.itemView.setOnClickListener(v -> onAccountClickListener.onAccountClick(item));
     }
 

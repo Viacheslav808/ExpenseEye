@@ -2,28 +2,28 @@ package com.example.expenseeye.model.reports;
 
 public class AccountSummary {
     private final String accountName;
-    private final double income;
-    private final double expense;
+    private final double totalSpent;
+    private final int transactionCount;
 
-    public AccountSummary(String accountName, double income, double expense) {
+    public AccountSummary(String accountName, double totalSpent, int transactionCount) {
         this.accountName = accountName;
-        this.income = income;
-        this.expense = expense;
+        this.totalSpent = totalSpent;
+        this.transactionCount = transactionCount;
     }
 
     public String getAccountName() {
         return accountName;
     }
 
-    public double getIncome() {
-        return income;
+    public double getTotalSpent() {
+        return totalSpent;
     }
 
-    public double getExpense() {
-        return expense;
+    public int getTransactionCount() {
+        return transactionCount;
     }
 
-    public double getNet() {
-        return income - expense;
+    public double getAverageAmount() {
+        return transactionCount == 0 ? 0.0 : totalSpent / transactionCount;
     }
 }
