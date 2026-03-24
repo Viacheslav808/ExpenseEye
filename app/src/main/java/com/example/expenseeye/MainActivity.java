@@ -3,14 +3,12 @@ package com.example.expenseeye;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 
-import com.example.expenseeye.R;
-
 import com.example.expenseeye.data.repository.FinanceRepo;
 import com.example.expenseeye.ui.HomeFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.example.expenseeye.ui.settings.SettingsFragment;
 import com.example.expenseeye.ui.transactions.TransactionListFragment;
-
+import com.example.expenseeye.ui.reports.ReportsFragment;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -40,12 +38,15 @@ public class MainActivity extends AppCompatActivity {
                         .replace(R.id.main_fragment_container, new TransactionListFragment())
                         .commit();
                 return true;
+            } else if (itemId == R.id.nav_reports) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.main_fragment_container, new ReportsFragment())
+                        .commit();
+                return true;
             }
-
 
             return false;
         });
-
 
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.main_fragment_container, new HomeFragment())
