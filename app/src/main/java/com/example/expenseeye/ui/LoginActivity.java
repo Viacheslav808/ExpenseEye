@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.expenseeye.MainActivity;
 import com.example.expenseeye.R;
+import com.example.expenseeye.data.database.ExpenseEyeDatabase;
 import com.example.expenseeye.viewmodel.auth.LoginViewModel;
 
 public class LoginActivity extends AppCompatActivity {
@@ -36,7 +37,12 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        loginViewModel = new LoginViewModel();
+        ExpenseEyeDatabase db = ExpenseEyeDatabase.getInstance(this);
+        loginViewModel = new LoginViewModel(
+                db.credentialDao(),
+                db.userDao()
+        );
+
 
         editName = findViewById(R.id.editName);
         editEmail = findViewById(R.id.editEmail);
@@ -121,23 +127,22 @@ public class LoginActivity extends AppCompatActivity {
         String email = editEmail.getText().toString().trim();
         String password = editPassword.getText().toString().trim();
 
-        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
+        if (email.isEmpty() || password.isEmpty()) {
             textStatus.setText("Please enter email and password.");
             return;
         }
 
-        boolean success = loginViewModel.login(email, password);
-
-        if (success) {
-            textStatus.setText("Login successful.");
-
-            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-            startActivity(intent);
-            finish();
-        } else {
-            textStatus.setText("Invalid email or password.");
-        }
+        loginViewModel.login(email, password, success -> {
+            if (success) {
+                textStatus.setText("Login successful.");
+                startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                finish();
+            } else {
+                textStatus.setText("Invalid email or password.");
+            }
+        });
     }
+
 
     private void clearFields() {
         editName.setText("");
