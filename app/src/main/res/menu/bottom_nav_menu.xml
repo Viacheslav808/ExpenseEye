@@ -15,5 +15,9 @@
         android:id="@+id/nav_transactions"
         android:icon="@drawable/ic_list"
         android:title="Transactions" />
+    <item
+        android:id="@+id/nav_reports"
+        android:icon="@drawable/ic_reports"
+        android:title="Reports" />
 
 </menu>
