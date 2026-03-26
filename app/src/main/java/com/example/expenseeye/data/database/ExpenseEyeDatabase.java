@@ -10,6 +10,7 @@ import androidx.room.RoomDatabase;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import com.example.expenseeye.data.dao.AccountDao;
+import com.example.expenseeye.data.dao.BudgetDao;
 import com.example.expenseeye.data.dao.CategoryDao;
 import com.example.expenseeye.data.dao.CredentialDao;
 import com.example.expenseeye.data.dao.TransactionDao;
@@ -17,6 +18,7 @@ import com.example.expenseeye.data.dao.UserDao;
 import com.example.expenseeye.data.entities.Credential;
 import com.example.expenseeye.data.entities.User;
 import com.example.expenseeye.data.model.Account;
+import com.example.expenseeye.data.model.Budget;
 import com.example.expenseeye.data.model.Category;
 import com.example.expenseeye.data.model.Transaction;
 import com.example.expenseeye.service.PasswordHasher;
@@ -25,8 +27,8 @@ import com.example.expenseeye.service.PasswordHasher;
 import java.util.concurrent.Executors;
 
 @Database(
-        entities = {Account.class, Transaction.class, Category.class, User.class, Credential.class},
-        version = 2,
+        entities = {Account.class, Transaction.class, Category.class, User.class, Credential.class, Budget.class},
+        version = 3,
         exportSchema = false
 )
 public abstract class ExpenseEyeDatabase extends RoomDatabase {
@@ -39,6 +41,7 @@ public abstract class ExpenseEyeDatabase extends RoomDatabase {
 
     public abstract UserDao userDao();
     public abstract CredentialDao credentialDao();
+    public abstract BudgetDao budgetDao();
 
 
     public static synchronized ExpenseEyeDatabase getInstance(Context context) {
