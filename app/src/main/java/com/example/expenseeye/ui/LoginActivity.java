@@ -12,6 +12,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.expenseeye.MainActivity;
 import com.example.expenseeye.R;
+import com.example.expenseeye.data.dao.CredentialDao;
+import com.example.expenseeye.data.dao.UserDao;
 import com.example.expenseeye.data.database.ExpenseEyeDatabase;
 import com.example.expenseeye.viewmodel.auth.LoginViewModel;
 
@@ -24,7 +26,6 @@ public class LoginActivity extends AppCompatActivity {
 
     private Button buttonPrimaryAction;
     private TextView textToggleMode;
-    private TextView textTitle;
     private TextView textSubtitle;
     private TextView textStatus;
 
@@ -37,12 +38,11 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        ExpenseEyeDatabase db = ExpenseEyeDatabase.getInstance(this);
-        loginViewModel = new LoginViewModel(
-                db.credentialDao(),
-                db.userDao()
-        );
+        ExpenseEyeDatabase db = ExpenseEyeDatabase.getInstance(getApplicationContext());
+        CredentialDao credentialDao = db.credentialDao();
+        UserDao userDao = db.userDao();
 
+        loginViewModel = new LoginViewModel(credentialDao, userDao);
 
         editName = findViewById(R.id.editName);
         editEmail = findViewById(R.id.editEmail);
@@ -51,7 +51,6 @@ public class LoginActivity extends AppCompatActivity {
 
         buttonPrimaryAction = findViewById(R.id.buttonPrimaryAction);
         textToggleMode = findViewById(R.id.textToggleMode);
-        textTitle = findViewById(R.id.textTitle);
         textSubtitle = findViewById(R.id.textSubtitle);
         textStatus = findViewById(R.id.textStatus);
 
@@ -111,23 +110,27 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        boolean success = loginViewModel.register(name, email, password);
+        new Thread(() -> {
+            boolean success = loginViewModel.register(name, email, password);
 
-        if (success) {
-            textStatus.setText("Registration successful. You can now log in.");
-            isRegisterMode = false;
-            clearFields();
-            updateModeUI();
-        } else {
-            textStatus.setText("Registration failed. Email may already exist.");
-        }
+            runOnUiThread(() -> {
+                if (success) {
+                    textStatus.setText("Registration successful. You can now log in.");
+                    isRegisterMode = false;
+                    clearFields();
+                    updateModeUI();
+                } else {
+                    textStatus.setText("Registration failed. Email may already exist.");
+                }
+            });
+        }).start();
     }
 
     private void handleLogin() {
         String email = editEmail.getText().toString().trim();
         String password = editPassword.getText().toString().trim();
 
-        if (email.isEmpty() || password.isEmpty()) {
+        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
             textStatus.setText("Please enter email and password.");
             return;
         }
@@ -135,14 +138,15 @@ public class LoginActivity extends AppCompatActivity {
         loginViewModel.login(email, password, success -> {
             if (success) {
                 textStatus.setText("Login successful.");
-                startActivity(new Intent(LoginActivity.this, MainActivity.class));
+
+                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                startActivity(intent);
                 finish();
             } else {
                 textStatus.setText("Invalid email or password.");
             }
         });
     }
-
 
     private void clearFields() {
         editName.setText("");
