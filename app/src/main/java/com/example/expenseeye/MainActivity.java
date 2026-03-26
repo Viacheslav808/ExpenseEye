@@ -5,6 +5,7 @@ import android.os.Bundle;
 
 import com.example.expenseeye.data.repository.FinanceRepo;
 import com.example.expenseeye.ui.HomeFragment;
+import com.example.expenseeye.ui.budget.BudgetFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.example.expenseeye.ui.settings.SettingsFragment;
 import com.example.expenseeye.ui.transactions.TransactionListFragment;
@@ -43,8 +44,12 @@ public class MainActivity extends AppCompatActivity {
                         .replace(R.id.main_fragment_container, new ReportsFragment())
                         .commit();
                 return true;
+            } else if (itemId == R.id.navigation_budget) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.main_fragment_container, new BudgetFragment())
+                        .commit();
+                return true;
             }
-
             return false;
         });
 
