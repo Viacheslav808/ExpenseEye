@@ -1,14 +1,17 @@
 package com.example.expenseeye.data.repository;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 
 import com.example.expenseeye.data.dao.AccountDao;
+import com.example.expenseeye.data.dao.BudgetDao;
 import com.example.expenseeye.data.dao.CategoryDao;
 import com.example.expenseeye.data.dao.TransactionDao;
 import com.example.expenseeye.data.database.ExpenseEyeDatabase;
 import com.example.expenseeye.data.model.Account;
+import com.example.expenseeye.data.model.Budget;
 import com.example.expenseeye.data.model.Category;
 import com.example.expenseeye.data.model.Transaction;
 import com.example.expenseeye.data.model.TransactionWithDetails;
@@ -33,6 +36,8 @@ public class FinanceRepo {
 
     private final NotificationService notificationService;
 
+    private final BudgetDao budgetDao;
+
 
     public FinanceRepo(Context context) {
 
@@ -40,6 +45,7 @@ public class FinanceRepo {
 
         accountDao = db.accountDao();
         transactionDao = db.transactionDao();
+        budgetDao = db.budgetDao();
         categoryDao = db.categoryDao();
 
         executorService = Executors.newSingleThreadExecutor();
@@ -50,6 +56,40 @@ public class FinanceRepo {
         createDefaultAccountAndCategory();
     }
 
+    private void runChecks(Transaction t) {
+
+        Budget budget = budgetDao.getBudgetForCategory(t.getCategoryId());
+        if (budget == null) return; // no budget set
+
+        long now = System.currentTimeMillis();
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.setTimeInMillis(now);
+        cal.set(java.util.Calendar.DAY_OF_MONTH, 1);
+        cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
+        cal.set(java.util.Calendar.MINUTE, 0);
+        cal.set(java.util.Calendar.SECOND, 0);
+        cal.set(java.util.Calendar.MILLISECOND, 0);
+
+        long startOfMonth = cal.getTimeInMillis();
+        long endOfMonth = now;
+
+        double spent = budgetDao.getSpentForCategory(
+                t.getCategoryId(),
+                startOfMonth,
+                endOfMonth
+        );
+        Log.d("BudgetCheck", "runChecks() called for categoryId=" + t.getCategoryId());
+
+        Log.d("BudgetCheck", "Budget limit = " + budget.getLimitAmount());
+
+        Log.d("BudgetCheck", "Spent this month = " + spent);
+
+        if (spent > budget.getLimitAmount()) {
+            notificationService.sendBudgetAlert(
+                    "You exceeded the budget for category " + t.getCategoryId()
+            );
+        }
+    }
     /**
      * Creates a default account and category to prevent foreign key issues.
      */
@@ -120,8 +160,10 @@ public class FinanceRepo {
 
     // Transaction operations
     public void insertTransaction(Transaction transaction) {
-        executorService.execute(() -> transactionDao.insert(transaction));
-        notificationService.runChecks();
+        executorService.execute(() -> {
+            transactionDao.insert(transaction);
+            runChecks(transaction);   // now runs AFTER insert completes
+        });
     }
 
     public void deleteTransaction(Transaction transaction) {
@@ -129,7 +171,10 @@ public class FinanceRepo {
     }
 
     public void updateTransaction(Transaction transaction) {
-        executorService.execute(() -> transactionDao.update(transaction));
+        executorService.execute(() -> {
+            transactionDao.update(transaction);
+            runChecks(transaction);
+        });
     }
 
     public LiveData<List<Transaction>> getAllTransactions() {
