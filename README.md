@@ -7,8 +7,6 @@
 ![Java](https://img.shields.io/badge/Java-Android-orange?logo=openjdk&logoColor=white)
 ![Architecture](https://img.shields.io/badge/Architecture-MVVM-blue)
 ![Database](https://img.shields.io/badge/Database-Room%20%7C%20SQLite-0E7C86)
-![Status](https://img.shields.io/badge/Status-In%20Development-8A2BE2)
-![Project](https://img.shields.io/badge/Project-Group%2010-black)
 
 ExpenseEye is an Android finance tracker built to help users monitor income, manage expenses, stay within budget, and understand spending habits through reports and visual summaries.
 
@@ -138,6 +136,3 @@ Then:
 - Accounts can represent things like chequing, savings, credit card, or loan accounts.
 - Transactions are manually entered and organized for reporting and budgeting.
 - The repository reflects both project planning deliverables and ongoing implementation work.
-
-## Acknowledgements
-Developed as the **ExpenseEye Finance Tracker** project by **Group 10**.
