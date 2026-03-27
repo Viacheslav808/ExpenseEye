@@ -94,7 +94,6 @@ Triggers budget-related alerts through Android notifications when spending excee
 | Collaboration | GitHub, GitHub Projects, Agile workflow |
 
 ## Team
-This project was developed by **Group 10**.
 
 | Team Member | Contribution Areas |
 |---|---|
