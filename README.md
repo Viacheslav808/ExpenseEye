@@ -122,7 +122,7 @@ Planned and ongoing improvements include:
 
 ## Getting Started
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Viacheslav808/ExpenseEye
 ```
 
 Then:
