@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.ExpenseEye" parent="Theme.MaterialComponents.DayNight.NoActionBar" />
+    <style name="Theme.ExpenseEye" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:textColor">#FFFFFF</item>
+    <item name="android:windowBackground">@drawable/bg_reports_gradient</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="colorControlNormal">#FFFFFF</item>/>
+        <item name="android:textColorHint">#FFFFFF</item>
+        <item name="colorPrimary">#1F51FF</item>
+        <item name="colorSecondary">#FFFFFF</item>
+        <item name="colorControlActivated">#1F51FF</item>
 
+    </style>
 </resources>
