@@ -27,6 +27,10 @@ public interface BudgetDao {
     @Query("SELECT * FROM budgets ORDER BY id ASC")
     LiveData<List<Budget>> getAllBudgets();
 
+    @Query("SELECT * FROM budgets ORDER BY id ASC")
+    List<Budget> getAllBudgetsSync();
+
+
     @Query("SELECT * FROM budgets WHERE categoryId = :categoryId LIMIT 1")
     Budget getBudgetForCategory(int categoryId);
 

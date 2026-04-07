@@ -7,6 +7,7 @@ import androidx.lifecycle.Transformations;
 
 import com.example.expenseeye.data.model.TransactionWithDetails;
 import com.example.expenseeye.data.repository.FinanceRepo;
+import com.example.expenseeye.data.repository.FinanceRepoProvider;
 import com.example.expenseeye.model.reports.AccountSummary;
 import com.example.expenseeye.model.reports.CategoryTotal;
 import com.example.expenseeye.model.reports.MonthlySpending;
@@ -29,7 +30,8 @@ public class ReportRepo {
     private final LiveData<List<AccountSummary>> accountSummaries;
 
     public ReportRepo(Context context) {
-        FinanceRepo financeRepo = new FinanceRepo(context.getApplicationContext());
+        FinanceRepo financeRepo = FinanceRepoProvider.get(context.getApplicationContext());
+
         LiveData<List<TransactionWithDetails>> transactions = financeRepo.getTransactionsWithDetails();
 
         monthlySpending = Transformations.map(transactions, rows -> buildMonthlySpending(rows));

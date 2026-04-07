@@ -49,17 +49,28 @@ public class FinanceRepo {
         categoryDao = db.categoryDao();
 
         executorService = Executors.newSingleThreadExecutor();
-
         notificationService = new NotificationService(context);
+
 
         // Ensure default data exists so FK constraints never fail
         createDefaultAccountAndCategory();
     }
 
-    private void runChecks(Transaction t) {
+    public NotificationService getNotificationService() {
+        return notificationService;
+    }
 
-        Budget budget = budgetDao.getBudgetForCategory(t.getCategoryId());
-        if (budget == null) return; // no budget set
+    private void runChecks(Transaction t) {
+        runChecksForCategory(t.getCategoryId());
+    }
+
+
+    private void runChecksForCategory(int categoryId) {
+        Log.d("BudgetCheck", "runChecksForCategory() for category " + categoryId);
+
+        Budget budget = budgetDao.getBudgetForCategory(categoryId);
+        Log.d("BudgetCheck", "Budget exists? " + (budget != null));
+        if (budget == null) return;
 
         long now = System.currentTimeMillis();
         java.util.Calendar cal = java.util.Calendar.getInstance();
@@ -74,22 +85,38 @@ public class FinanceRepo {
         long endOfMonth = now;
 
         double spent = budgetDao.getSpentForCategory(
-                t.getCategoryId(),
+                (int) categoryId,
                 startOfMonth,
                 endOfMonth
         );
-        Log.d("BudgetCheck", "runChecks() called for categoryId=" + t.getCategoryId());
+        Log.d("BudgetCheck", "Spent = " + spent + " / Limit = " + budget.getLimitAmount());
 
-        Log.d("BudgetCheck", "Budget limit = " + budget.getLimitAmount());
-
-        Log.d("BudgetCheck", "Spent this month = " + spent);
 
         if (spent > budget.getLimitAmount()) {
+            Log.d("BudgetCheck", "OVER BUDGET — sending notification");
             notificationService.sendBudgetAlert(
-                    "You exceeded the budget for category " + t.getCategoryId()
+                    "You exceeded the budget for category " + categoryId
             );
         }
     }
+
+    public void runChecksOnLogin() {
+        Log.d("BudgetCheck", "runChecksOnLogin() STARTED");
+        executorService.execute(() -> {
+            Log.d("BudgetCheck", "runChecksOnLogin() INSIDE EXECUTOR");
+            List<Budget> budgets = budgetDao.getAllBudgetsSync();
+            Log.d("BudgetCheck", "Budgets found: " + budgets.size());
+
+            for (Budget b : budgets) {
+                Log.d("BudgetCheck", "Checking category from login: " + b.getCategoryId());
+                runChecksForCategory(b.getCategoryId());
+            }
+        });
+    }
+
+
+
+
     /**
      * Creates a default account and category to prevent foreign key issues.
      */
@@ -160,9 +187,12 @@ public class FinanceRepo {
 
     // Transaction operations
     public void insertTransaction(Transaction transaction) {
+        Log.d("BudgetCheck", "insertTransaction() CALLED");
         executorService.execute(() -> {
+            Log.d("BudgetCheck", "insertTransaction() INSIDE EXECUTOR");
             transactionDao.insert(transaction);
-            runChecks(transaction);   // now runs AFTER insert completes
+            Log.d("BudgetCheck", "Transaction inserted, running checks");
+            runChecks(transaction);
         });
     }
 

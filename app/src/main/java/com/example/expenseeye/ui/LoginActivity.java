@@ -15,6 +15,8 @@ import com.example.expenseeye.R;
 import com.example.expenseeye.data.dao.CredentialDao;
 import com.example.expenseeye.data.dao.UserDao;
 import com.example.expenseeye.data.database.ExpenseEyeDatabase;
+import com.example.expenseeye.data.repository.FinanceRepo;
+import com.example.expenseeye.data.repository.FinanceRepoProvider;
 import com.example.expenseeye.viewmodel.auth.LoginViewModel;
 
 public class LoginActivity extends AppCompatActivity {
@@ -41,8 +43,11 @@ public class LoginActivity extends AppCompatActivity {
         ExpenseEyeDatabase db = ExpenseEyeDatabase.getInstance(getApplicationContext());
         CredentialDao credentialDao = db.credentialDao();
         UserDao userDao = db.userDao();
+        FinanceRepo financeRepo = FinanceRepoProvider.get(getApplicationContext());
 
-        loginViewModel = new LoginViewModel(credentialDao, userDao);
+
+
+        loginViewModel = new LoginViewModel(credentialDao, userDao, financeRepo);
 
         editName = findViewById(R.id.editName);
         editEmail = findViewById(R.id.editEmail);

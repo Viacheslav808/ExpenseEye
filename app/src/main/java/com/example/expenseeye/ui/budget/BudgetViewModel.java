@@ -12,6 +12,7 @@ import com.example.expenseeye.data.model.Category;
 import com.example.expenseeye.data.model.Transaction;
 import com.example.expenseeye.data.repository.BudgetRepo;
 import com.example.expenseeye.data.repository.FinanceRepo;
+import com.example.expenseeye.data.repository.FinanceRepoProvider;
 import com.example.expenseeye.model.reports.BudgetEvaluation;
 import com.example.expenseeye.model.reports.BudgetEvaluator;
 
@@ -38,7 +39,8 @@ public class BudgetViewModel extends AndroidViewModel {
     public BudgetViewModel(@NonNull Application application) {
         super(application);
         budgetRepo   = new BudgetRepo(application);
-        financeRepo  = new FinanceRepo(application);
+        financeRepo = FinanceRepoProvider.get(application);
+
 
         budgets      = budgetRepo.getAllBudgets();
         categories   = financeRepo.getAllCategories();
