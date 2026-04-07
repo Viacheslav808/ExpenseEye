@@ -11,6 +11,7 @@ import com.example.expenseeye.data.model.Category;
 import com.example.expenseeye.data.model.Transaction;
 import com.example.expenseeye.data.model.TransactionWithDetails;
 import com.example.expenseeye.data.repository.FinanceRepo;
+import com.example.expenseeye.data.repository.FinanceRepoProvider;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -21,6 +22,7 @@ import java.util.concurrent.Executors;
  * Handles UI data and runs database writes on a background thread.
  */
 public class TransactionViewModel extends AndroidViewModel {
+
 
     private final FinanceRepo repository;
 
@@ -40,7 +42,8 @@ public class TransactionViewModel extends AndroidViewModel {
     public TransactionViewModel(@NonNull Application application) {
         super(application);
 
-        repository = new FinanceRepo(application);
+        repository = FinanceRepoProvider.get(application);
+
 
         transactions = repository.getAllTransactions();
         transactionsWithDetails = repository.getTransactionsWithDetails();
@@ -49,6 +52,9 @@ public class TransactionViewModel extends AndroidViewModel {
         accounts = repository.getAllAccounts();
         categories = repository.getAllCategories();
     }
+
+
+
 
     // Transactions
     public LiveData<List<Transaction>> getTransactions() {

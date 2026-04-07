@@ -14,6 +14,7 @@ import java.util.List;
 @Dao
 public interface CategoryDao {
 
+
     // Insert a single category, ignore if ID exists
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     void insert(Category category);

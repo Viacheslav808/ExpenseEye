@@ -7,20 +7,25 @@ import androidx.lifecycle.ViewModel;
 import com.example.expenseeye.data.dao.CredentialDao;
 import com.example.expenseeye.data.dao.UserDao;
 import com.example.expenseeye.data.entities.Credential;
+import com.example.expenseeye.data.repository.FinanceRepo;
 import com.example.expenseeye.repository.auth.AuthRepository;
 import com.example.expenseeye.service.PasswordHasher;
 
+
 import java.util.concurrent.Executors;
 import android.os.Handler;
-
+import android.util.Log;
 
 
 public class LoginViewModel extends ViewModel {
 
-    private final AuthRepository authRepository;
 
-    public LoginViewModel(CredentialDao credentialDao, UserDao userDao) {
+    private final AuthRepository authRepository;
+    private final FinanceRepo financeRepo;
+
+    public LoginViewModel(CredentialDao credentialDao, UserDao userDao, FinanceRepo financeRepo) {
         this.authRepository = new AuthRepository(credentialDao, userDao);
+        this.financeRepo = financeRepo;
     }
 
     public interface LoginCallback {
@@ -56,6 +61,9 @@ public class LoginViewModel extends ViewModel {
             // Switch back to UI thread
             new Handler(Looper.getMainLooper()).post(() -> {
                 callback.onResult(finalSuccess);
+                if (finalSuccess) {
+                    financeRepo.runChecksOnLogin();
+                }
             });
         });
     }
