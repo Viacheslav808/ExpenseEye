@@ -11,6 +11,7 @@ import com.example.expenseeye.data.repository.FinanceRepoProvider;
 import com.example.expenseeye.model.reports.AccountSummary;
 import com.example.expenseeye.model.reports.CategoryTotal;
 import com.example.expenseeye.model.reports.MonthlySpending;
+import com.example.expenseeye.model.reports.ReportOverview;
 
 import java.time.Instant;
 import java.time.YearMonth;
@@ -28,15 +29,17 @@ public class ReportRepo {
     private final LiveData<List<MonthlySpending>> monthlySpending;
     private final LiveData<List<CategoryTotal>> categoryTotals;
     private final LiveData<List<AccountSummary>> accountSummaries;
+    private final LiveData<ReportOverview> reportOverview;
 
     public ReportRepo(Context context) {
         FinanceRepo financeRepo = FinanceRepoProvider.get(context.getApplicationContext());
 
         LiveData<List<TransactionWithDetails>> transactions = financeRepo.getTransactionsWithDetails();
 
-        monthlySpending = Transformations.map(transactions, rows -> buildMonthlySpending(rows));
-        categoryTotals = Transformations.map(transactions, rows -> buildCategoryTotals(rows));
-        accountSummaries = Transformations.map(transactions, rows -> buildAccountSummaries(rows));
+        monthlySpending = Transformations.map(transactions, this::buildMonthlySpending);
+        categoryTotals = Transformations.map(transactions, this::buildCategoryTotals);
+        accountSummaries = Transformations.map(transactions, this::buildAccountSummaries);
+        reportOverview = Transformations.map(transactions, this::buildOverview);
     }
 
     public LiveData<List<MonthlySpending>> getMonthlySpending() {
@@ -51,16 +54,16 @@ public class ReportRepo {
         return accountSummaries;
     }
 
+    public LiveData<ReportOverview> getReportOverview() {
+        return reportOverview;
+    }
+
     private List<MonthlySpending> buildMonthlySpending(List<TransactionWithDetails> rows) {
         Map<YearMonth, Double> totals = new TreeMap<>();
 
         if (rows != null) {
             for (TransactionWithDetails row : rows) {
-                YearMonth month = YearMonth.from(
-                        Instant.ofEpochMilli(row.date)
-                                .atZone(ZoneId.systemDefault())
-                                .toLocalDate()
-                );
+                YearMonth month = toYearMonth(row.date);
                 totals.put(month, totals.getOrDefault(month, 0.0) + row.amount);
             }
         }
@@ -116,6 +119,80 @@ public class ReportRepo {
         }
         result.sort((a, b) -> Double.compare(b.getTotalSpent(), a.getTotalSpent()));
         return result;
+    }
+
+    private ReportOverview buildOverview(List<TransactionWithDetails> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return new ReportOverview(0.0, 0.0, 0, "No data", "No data", "No data");
+        }
+
+        double totalSpending = 0.0;
+
+        Map<String, Double> categoryTotals = new HashMap<>();
+        Map<String, Double> accountTotals = new HashMap<>();
+        Map<YearMonth, Double> monthTotals = new HashMap<>();
+
+        for (TransactionWithDetails row : rows) {
+            totalSpending += row.amount;
+
+            String categoryName = safeLabel(row.categoryName, "Unknown Category");
+            categoryTotals.put(categoryName, categoryTotals.getOrDefault(categoryName, 0.0) + row.amount);
+
+            String accountName = safeLabel(row.accountName, "Unknown Account");
+            accountTotals.put(accountName, accountTotals.getOrDefault(accountName, 0.0) + row.amount);
+
+            YearMonth month = toYearMonth(row.date);
+            monthTotals.put(month, monthTotals.getOrDefault(month, 0.0) + row.amount);
+        }
+
+        return new ReportOverview(
+                totalSpending,
+                totalSpending / rows.size(),
+                rows.size(),
+                findTopLabel(categoryTotals, "No data"),
+                findTopLabel(accountTotals, "No data"),
+                formatPeakMonth(monthTotals)
+        );
+    }
+
+    private YearMonth toYearMonth(long epochMillis) {
+        return YearMonth.from(
+                Instant.ofEpochMilli(epochMillis)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate()
+        );
+    }
+
+    private String findTopLabel(Map<String, Double> totals, String fallback) {
+        String topLabel = fallback;
+        double max = Double.MIN_VALUE;
+
+        for (Map.Entry<String, Double> entry : totals.entrySet()) {
+            if (entry.getValue() > max) {
+                max = entry.getValue();
+                topLabel = entry.getKey();
+            }
+        }
+
+        return topLabel;
+    }
+
+    private String formatPeakMonth(Map<YearMonth, Double> totals) {
+        YearMonth peakMonth = null;
+        double max = Double.MIN_VALUE;
+
+        for (Map.Entry<YearMonth, Double> entry : totals.entrySet()) {
+            if (entry.getValue() > max) {
+                max = entry.getValue();
+                peakMonth = entry.getKey();
+            }
+        }
+
+        if (peakMonth == null) {
+            return "No data";
+        }
+
+        return peakMonth.format(DateTimeFormatter.ofPattern("MMM yyyy", Locale.CANADA));
     }
 
     private String safeLabel(String value, String fallback) {

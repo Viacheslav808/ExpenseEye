@@ -3,6 +3,7 @@ package com.example.expenseeye.ui.reports;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -25,6 +26,7 @@ public class AccountSummaryAdapter extends RecyclerView.Adapter<AccountSummaryAd
     private final List<AccountSummary> items = new ArrayList<>();
     private final NumberFormat currency = NumberFormat.getCurrencyInstance(Locale.CANADA);
     private final OnAccountClickListener onAccountClickListener;
+    private double totalSpend = 0.0;
 
     public AccountSummaryAdapter(List<AccountSummary> items, OnAccountClickListener onAccountClickListener) {
         this.items.addAll(items);
@@ -34,6 +36,10 @@ public class AccountSummaryAdapter extends RecyclerView.Adapter<AccountSummaryAd
     public void replaceItems(List<AccountSummary> newItems) {
         items.clear();
         items.addAll(newItems);
+        totalSpend = 0.0;
+        for (AccountSummary item : newItems) {
+            totalSpend += item.getTotalSpent();
+        }
         notifyDataSetChanged();
     }
 
@@ -47,10 +53,16 @@ public class AccountSummaryAdapter extends RecyclerView.Adapter<AccountSummaryAd
     @Override
     public void onBindViewHolder(@NonNull AccountSummaryViewHolder holder, int position) {
         AccountSummary item = items.get(position);
+        int sharePercent = totalSpend <= 0
+                ? 0
+                : (int) Math.round((item.getTotalSpent() / totalSpend) * 100d);
+
         holder.accountNameText.setText(item.getAccountName());
         holder.incomeText.setText("Spent: " + currency.format(item.getTotalSpent()));
         holder.expenseText.setText("Transactions: " + item.getTransactionCount());
         holder.netText.setText("Average: " + currency.format(item.getAverageAmount()));
+        holder.shareText.setText("Share: " + sharePercent + "%");
+        holder.shareProgress.setProgress(sharePercent);
         holder.itemView.setOnClickListener(v -> onAccountClickListener.onAccountClick(item));
     }
 
@@ -64,6 +76,8 @@ public class AccountSummaryAdapter extends RecyclerView.Adapter<AccountSummaryAd
         final TextView incomeText;
         final TextView expenseText;
         final TextView netText;
+        final TextView shareText;
+        final ProgressBar shareProgress;
 
         AccountSummaryViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -71,6 +85,8 @@ public class AccountSummaryAdapter extends RecyclerView.Adapter<AccountSummaryAd
             incomeText = itemView.findViewById(R.id.text_income);
             expenseText = itemView.findViewById(R.id.text_expense);
             netText = itemView.findViewById(R.id.text_net);
+            shareText = itemView.findViewById(R.id.text_share);
+            shareProgress = itemView.findViewById(R.id.progress_share);
         }
     }
 }

@@ -17,6 +17,7 @@ import com.example.expenseeye.R;
 import com.example.expenseeye.model.reports.AccountSummary;
 import com.example.expenseeye.model.reports.CategoryTotal;
 import com.example.expenseeye.model.reports.MonthlySpending;
+import com.example.expenseeye.model.reports.ReportOverview;
 import com.example.expenseeye.viewmodel.reports.ReportsViewModel;
 
 import java.text.NumberFormat;
@@ -46,33 +47,49 @@ public class ReportsFragment extends Fragment {
 
         ReportsViewModel viewModel = new ViewModelProvider(this).get(ReportsViewModel.class);
 
-        TextView monthlyTotalText = view.findViewById(R.id.text_monthly_total);
-        TextView monthlyCaptionText = view.findViewById(R.id.text_monthly_caption);
+        TextView totalSpendingText = view.findViewById(R.id.text_total_spending);
+        TextView averageText = view.findViewById(R.id.text_average_spend);
+        TextView countText = view.findViewById(R.id.text_transaction_count);
+        TextView topCategoryText = view.findViewById(R.id.text_top_category);
+        TextView topAccountText = view.findViewById(R.id.text_top_account);
+        TextView peakMonthText = view.findViewById(R.id.text_peak_month);
+
+        MonthlyTrendChartView monthlyTrendChart = view.findViewById(R.id.monthly_trend_chart);
+        CategoryDonutView categoryDonutView = view.findViewById(R.id.category_donut_chart);
 
         RecyclerView categoryList = view.findViewById(R.id.list_category_totals);
         categoryList.setLayoutManager(new LinearLayoutManager(requireContext()));
-        categoryAdapter = new StatAdapter(new ArrayList<>(), item -> {});
+        categoryAdapter = new StatAdapter(new ArrayList<>(), item -> {
+        });
         categoryList.setAdapter(categoryAdapter);
 
         RecyclerView accountList = view.findViewById(R.id.list_account_summaries);
         accountList.setLayoutManager(new LinearLayoutManager(requireContext()));
-        accountAdapter = new AccountSummaryAdapter(new ArrayList<>(), item -> {});
+        accountAdapter = new AccountSummaryAdapter(new ArrayList<>(), item -> {
+        });
         accountList.setAdapter(accountAdapter);
+
+        viewModel.getReportOverview().observe(getViewLifecycleOwner(), overview -> {
+            ReportOverview safeOverview = overview == null
+                    ? new ReportOverview(0.0, 0.0, 0, "No data", "No data", "No data")
+                    : overview;
+
+            totalSpendingText.setText(currency.format(safeOverview.getTotalSpending()));
+            averageText.setText(currency.format(safeOverview.getAverageTransactionValue()));
+            countText.setText(String.valueOf(safeOverview.getTransactionCount()));
+            topCategoryText.setText(safeOverview.getTopCategory());
+            topAccountText.setText(safeOverview.getTopAccount());
+            peakMonthText.setText(safeOverview.getPeakMonth());
+        });
 
         viewModel.getMonthlySpending().observe(getViewLifecycleOwner(), items -> {
             List<MonthlySpending> monthly = items == null ? new ArrayList<>() : items;
-            monthlyTotalText.setText(currency.format(totalMonthlySpending(monthly)));
-
-            int bucketCount = monthly.size();
-            monthlyCaptionText.setText(
-                    bucketCount == 1
-                            ? "Across 1 month bucket"
-                            : "Across " + bucketCount + " month buckets"
-            );
+            monthlyTrendChart.setData(monthly);
         });
 
         viewModel.getCategoryTotals().observe(getViewLifecycleOwner(), items -> {
             List<CategoryTotal> categories = items == null ? new ArrayList<>() : items;
+            categoryDonutView.setData(categories);
             categoryAdapter.replaceItems(toCategoryStatItems(categories));
         });
 
@@ -82,21 +99,22 @@ public class ReportsFragment extends Fragment {
         });
     }
 
-    private double totalMonthlySpending(List<MonthlySpending> monthlyRows) {
-        double total = 0.0;
-        for (MonthlySpending item : monthlyRows) {
-            total += item.getTotal();
-        }
-        return total;
-    }
-
     private List<StatAdapter.StatItem> toCategoryStatItems(List<CategoryTotal> source) {
         List<StatAdapter.StatItem> items = new ArrayList<>();
+        double total = 0.0;
         for (CategoryTotal category : source) {
+            total += category.getTotal();
+        }
+
+        for (CategoryTotal category : source) {
+            int sharePercent = total <= 0
+                    ? 0
+                    : (int) Math.round((category.getTotal() / total) * 100d);
             items.add(new StatAdapter.StatItem(
                     category.getCategoryName(),
                     currency.format(category.getTotal()),
-                    category.getTotal()
+                    sharePercent + "% of total",
+                    sharePercent
             ));
         }
         return items;
