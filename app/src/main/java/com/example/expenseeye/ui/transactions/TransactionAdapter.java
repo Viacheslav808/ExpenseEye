@@ -16,15 +16,20 @@ import java.util.List;
 
 public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.ViewHolder> {
 
-    public interface OnDeleteClickListener {
+    /**
+     * Single responsibility listener:
+     * Adapter only sends actions, UI logic stays in Fragment
+     */
+    public interface OnTransactionActionListener {
         void onDelete(TransactionWithDetails transaction);
+        void onEdit(TransactionWithDetails transaction);
     }
 
     private final List<TransactionWithDetails> transactions = new ArrayList<>();
-    private final OnDeleteClickListener deleteListener;
+    private final OnTransactionActionListener listener;
 
-    public TransactionAdapter(OnDeleteClickListener listener) {
-        this.deleteListener = listener;
+    public TransactionAdapter(OnTransactionActionListener listener) {
+        this.listener = listener;
     }
 
     @NonNull
@@ -43,17 +48,30 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         TransactionWithDetails tx = transactions.get(position);
 
         holder.title.setText(tx.description);
-
         holder.amount.setText(String.format("$%.2f", tx.amount));
-
         holder.details.setText(tx.accountName + " • " + tx.categoryName);
 
-        holder.itemView.setOnLongClickListener(v -> {
-
-            if (deleteListener != null) {
-                deleteListener.onDelete(tx);
+        // DELETE ACTION
+        holder.btnDelete.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onDelete(tx);
             }
+        });
 
+        // =========================
+        // EDIT ACTION
+        // =========================
+        holder.btnEdit.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onEdit(tx);
+            }
+        });
+
+        // Optional UX: long press also edits
+        holder.itemView.setOnLongClickListener(v -> {
+            if (listener != null) {
+                listener.onEdit(tx);
+            }
             return true;
         });
     }
@@ -63,30 +81,34 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         return transactions.size();
     }
 
+    /**
+     * Updates RecyclerView data
+     */
     public void updateList(List<TransactionWithDetails> newList) {
-
         transactions.clear();
-
         if (newList != null) {
             transactions.addAll(newList);
         }
-
         notifyDataSetChanged();
     }
 
+    // VIEW HOLDER
     static class ViewHolder extends RecyclerView.ViewHolder {
 
         TextView title;
         TextView amount;
         TextView details;
+        View btnEdit;
+        View btnDelete;
 
         ViewHolder(@NonNull View itemView) {
-
             super(itemView);
 
             title = itemView.findViewById(R.id.tx_title);
             amount = itemView.findViewById(R.id.tx_amount);
             details = itemView.findViewById(R.id.tx_details);
+            btnEdit = itemView.findViewById(R.id.btn_edit);
+            btnDelete = itemView.findViewById(R.id.btn_delete);
         }
     }
 }

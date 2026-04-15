@@ -29,6 +29,8 @@ public interface TransactionDao {
 
     @Query(
             "SELECT t.id, t.amount, t.description, t.date, " +
+                    "t.accountId AS accountId, " +
+                    "t.categoryId AS categoryId, " +
                     "a.name AS accountName, " +
                     "c.name AS categoryName " +
                     "FROM transactions t " +
