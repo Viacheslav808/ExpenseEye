@@ -1,6 +1,7 @@
 package com.example.expenseeye.ui.budget;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,7 +10,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -22,7 +22,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.expenseeye.R;
 import com.example.expenseeye.data.model.Budget;
 import com.example.expenseeye.data.model.Category;
-import com.example.expenseeye.model.reports.BudgetEvaluation;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -80,7 +79,7 @@ public class BudgetFragment extends Fragment {
                 .inflate(R.layout.dialog_add_budget, null);
 
         Spinner spinnerCategory = dialogView.findViewById(R.id.spinner_budget_category);
-        EditText etLimit        = dialogView.findViewById(R.id.et_budget_limit);
+        EditText etLimit = dialogView.findViewById(R.id.et_budget_limit);
 
         ArrayAdapter<Category> catAdapter = new ArrayAdapter<>(
                 requireContext(), android.R.layout.simple_spinner_item, categoryList);
@@ -96,8 +95,18 @@ public class BudgetFragment extends Fragment {
                         Toast.makeText(requireContext(), "Enter a limit amount", Toast.LENGTH_SHORT).show();
                         return;
                     }
+
                     double limit = Double.parseDouble(limitStr);
                     Category selected = (Category) spinnerCategory.getSelectedItem();
+
+                    int userId = requireActivity()
+                            .getSharedPreferences("session", Context.MODE_PRIVATE)
+                            .getInt("user_id", -1);
+
+                    if (userId == -1) {
+                        Toast.makeText(requireContext(), "No logged in user found", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
                     // Default period: current calendar month
                     Calendar cal = Calendar.getInstance();
@@ -114,7 +123,7 @@ public class BudgetFragment extends Fragment {
                     cal.set(Calendar.SECOND, 59);
                     long end = cal.getTimeInMillis();
 
-                    Budget budget = new Budget(selected.getId(), limit, start, end);
+                    Budget budget = new Budget(userId, selected.getId(), limit, start, end);
                     viewModel.insertBudget(budget);
                     Toast.makeText(requireContext(), "Budget created!", Toast.LENGTH_SHORT).show();
                 })

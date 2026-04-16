@@ -1,5 +1,6 @@
 package com.example.expenseeye.viewmodel.auth;
 
+import android.os.Handler;
 import android.os.Looper;
 
 import androidx.lifecycle.ViewModel;
@@ -11,14 +12,9 @@ import com.example.expenseeye.data.repository.FinanceRepo;
 import com.example.expenseeye.repository.auth.AuthRepository;
 import com.example.expenseeye.service.PasswordHasher;
 
-
 import java.util.concurrent.Executors;
-import android.os.Handler;
-import android.util.Log;
-
 
 public class LoginViewModel extends ViewModel {
-
 
     private final AuthRepository authRepository;
     private final FinanceRepo financeRepo;
@@ -29,9 +25,8 @@ public class LoginViewModel extends ViewModel {
     }
 
     public interface LoginCallback {
-        void onResult(boolean success);
+        void onResult(int userId);
     }
-
 
     public boolean register(String name, String email, String password) {
         String salt = PasswordHasher.generateSalt();
@@ -46,26 +41,29 @@ public class LoginViewModel extends ViewModel {
 
             Credential credential = authRepository.getCredentialByEmail(email);
 
-            boolean success = false;
+            int userId = -1;
 
             if (credential != null) {
-                success = PasswordHasher.verifyPassword(
+                boolean success = PasswordHasher.verifyPassword(
                         password,
                         credential.getPasswordHash(),
                         credential.getPasswordSalt()
                 );
+
+                if (success) {
+                    userId = credential.getUserId();
+                }
             }
 
-            boolean finalSuccess = success;
+            int finalUserId = userId;
 
-            // Switch back to UI thread
             new Handler(Looper.getMainLooper()).post(() -> {
-                callback.onResult(finalSuccess);
-                if (finalSuccess) {
+                callback.onResult(finalUserId);
+
+                if (finalUserId != -1) {
                     financeRepo.runChecksOnLogin();
                 }
             });
         });
     }
-
 }

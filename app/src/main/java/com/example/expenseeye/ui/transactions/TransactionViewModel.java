@@ -1,6 +1,8 @@
 package com.example.expenseeye.ui.transactions;
 
 import android.app.Application;
+import android.content.Context;
+import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -23,16 +25,16 @@ import java.util.concurrent.Executors;
  */
 public class TransactionViewModel extends AndroidViewModel {
 
-
     private final FinanceRepo repository;
+    private final int userId;
 
-    // Basic transactions
+    // User-specific transactions
     private final LiveData<List<Transaction>> transactions;
 
-    // Transactions with account & category names (JOIN query)
+    // User-specific transactions with account & category names
     private final LiveData<List<TransactionWithDetails>> transactionsWithDetails;
 
-    // LiveData for Accounts & Categories
+    // User-specific accounts, shared categories
     private final LiveData<List<Account>> accounts;
     private final LiveData<List<Category>> categories;
 
@@ -44,17 +46,22 @@ public class TransactionViewModel extends AndroidViewModel {
 
         repository = FinanceRepoProvider.get(application);
 
+        SharedPreferences prefs = application.getSharedPreferences("session", Context.MODE_PRIVATE);
+        userId = prefs.getInt("user_id", -1);
 
-        transactions = repository.getAllTransactions();
-        transactionsWithDetails = repository.getTransactionsWithDetails();
+        if (userId != -1) {
+            repository.ensureDefaultAccountsForUser(userId);
+            transactions = repository.getTransactionsForUser(userId);
+            transactionsWithDetails = repository.getTransactionsWithDetailsForUser(userId);
+            accounts = repository.getAccountsForUser(userId);
+        } else {
+            transactions = repository.getAllTransactions();
+            transactionsWithDetails = repository.getTransactionsWithDetails();
+            accounts = repository.getAllAccounts();
+        }
 
-        // Fetch accounts and categories from DB
-        accounts = repository.getAllAccounts();
         categories = repository.getAllCategories();
     }
-
-
-
 
     // Transactions
     public LiveData<List<Transaction>> getTransactions() {

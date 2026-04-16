@@ -1,6 +1,7 @@
 package com.example.expenseeye.repository.reports;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Transformations;
@@ -34,7 +35,12 @@ public class ReportRepo {
     public ReportRepo(Context context) {
         FinanceRepo financeRepo = FinanceRepoProvider.get(context.getApplicationContext());
 
-        LiveData<List<TransactionWithDetails>> transactions = financeRepo.getTransactionsWithDetails();
+        SharedPreferences prefs = context.getApplicationContext()
+                .getSharedPreferences("session", Context.MODE_PRIVATE);
+        int userId = prefs.getInt("user_id", -1);
+
+        LiveData<List<TransactionWithDetails>> transactions =
+                financeRepo.getTransactionsWithDetailsForUser(userId);
 
         monthlySpending = Transformations.map(transactions, this::buildMonthlySpending);
         categoryTotals = Transformations.map(transactions, this::buildCategoryTotals);

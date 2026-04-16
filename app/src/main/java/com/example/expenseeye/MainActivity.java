@@ -2,6 +2,8 @@ package com.example.expenseeye;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -12,6 +14,7 @@ import com.example.expenseeye.data.repository.FinanceRepo;
 import com.example.expenseeye.data.repository.FinanceRepoProvider;
 import com.example.expenseeye.service.NotificationService;
 import com.example.expenseeye.ui.HomeFragment;
+import com.example.expenseeye.ui.LoginActivity;
 import com.example.expenseeye.ui.budget.BudgetFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.example.expenseeye.ui.settings.SettingsFragment;
@@ -21,14 +24,26 @@ import com.google.android.material.snackbar.Snackbar;
 
 import android.os.Handler;
 
-
 public class MainActivity extends AppCompatActivity {
+
     private String pendingBudgetMessage = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        SharedPreferences prefs = getSharedPreferences("session", MODE_PRIVATE);
+        int userId = prefs.getInt("user_id", -1);
+
+        // If no valid logged-in user, send back to login
+        if (userId == -1) {
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+            return;
+        }
+
         setContentView(R.layout.activity_main);
+
         FinanceRepo financeRepo = FinanceRepoProvider.get(getApplicationContext());
         NotificationService notificationService = financeRepo.getNotificationService();
 
@@ -47,8 +62,6 @@ public class MainActivity extends AppCompatActivity {
                 );
             }
         }
-
-
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
         bottomNav.setOnItemSelectedListener(item -> {
@@ -96,7 +109,5 @@ public class MainActivity extends AppCompatActivity {
                 pendingBudgetMessage = null;
             }
         });
-
-
     }
 }

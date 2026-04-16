@@ -20,6 +20,12 @@ public class AuthRepository {
     }
 
     public long registerUser(String name, String email, String passwordHash, String salt) {
+        // Prevent duplicate email registration
+        Credential existingCredential = credentialDao.getCredentialByEmail(email);
+        if (existingCredential != null) {
+            return -1;
+        }
+
         long userId = userDao.insert(new User(name, System.currentTimeMillis()));
 
         Credential credential = new Credential(

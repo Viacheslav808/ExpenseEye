@@ -24,19 +24,20 @@ public interface BudgetDao {
     @Delete
     void delete(Budget budget);
 
-    @Query("SELECT * FROM budgets ORDER BY id ASC")
-    LiveData<List<Budget>> getAllBudgets();
+    @Query("SELECT * FROM budgets WHERE userId = :userId ORDER BY id ASC")
+    LiveData<List<Budget>> getBudgetsForUser(int userId);
 
-    @Query("SELECT * FROM budgets ORDER BY id ASC")
-    List<Budget> getAllBudgetsSync();
+    @Query("SELECT * FROM budgets WHERE userId = :userId ORDER BY id ASC")
+    List<Budget> getBudgetsForUserSync(int userId);
 
+    @Query("SELECT * FROM budgets WHERE userId = :userId AND categoryId = :categoryId LIMIT 1")
+    Budget getBudgetForCategory(int userId, int categoryId);
 
-    @Query("SELECT * FROM budgets WHERE categoryId = :categoryId LIMIT 1")
-    Budget getBudgetForCategory(int categoryId);
-
-    // Sum of transactions for a category within a date range
-    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM transactions t " +
-            "WHERE t.categoryId = :categoryId " +
+    @Query("SELECT COALESCE(SUM(t.amount), 0) " +
+            "FROM transactions t " +
+            "JOIN accounts a ON t.accountId = a.id " +
+            "WHERE a.userId = :userId " +
+            "AND t.categoryId = :categoryId " +
             "AND t.date >= :from AND t.date <= :to")
-    double getSpentForCategory(int categoryId, long from, long to);
+    double getSpentForCategory(int userId, int categoryId, long from, long to);
 }

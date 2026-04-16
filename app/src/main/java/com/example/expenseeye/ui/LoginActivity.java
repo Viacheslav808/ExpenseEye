@@ -1,6 +1,7 @@
 package com.example.expenseeye.ui;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -44,8 +45,6 @@ public class LoginActivity extends AppCompatActivity {
         CredentialDao credentialDao = db.credentialDao();
         UserDao userDao = db.userDao();
         FinanceRepo financeRepo = FinanceRepoProvider.get(getApplicationContext());
-
-
 
         loginViewModel = new LoginViewModel(credentialDao, userDao, financeRepo);
 
@@ -140,9 +139,14 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        loginViewModel.login(email, password, success -> {
-            if (success) {
+        loginViewModel.login(email, password, userId -> {
+            if (userId != -1) {
                 textStatus.setText("Login successful.");
+
+                SharedPreferences prefs = getSharedPreferences("session", MODE_PRIVATE);
+                prefs.edit().putInt("user_id", userId).apply();
+
+                FinanceRepoProvider.get(getApplicationContext()).ensureDefaultAccountsForUser(userId);
 
                 Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(intent);

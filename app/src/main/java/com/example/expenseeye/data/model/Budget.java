@@ -5,6 +5,8 @@ import androidx.room.ForeignKey;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
+import com.example.expenseeye.data.entities.User;
+
 @Entity(
         tableName = "budgets",
         foreignKeys = {
@@ -13,42 +15,86 @@ import androidx.room.PrimaryKey;
                         parentColumns = "id",
                         childColumns = "categoryId",
                         onDelete = ForeignKey.CASCADE
+                ),
+                @ForeignKey(
+                        entity = User.class,
+                        parentColumns = "user_id",
+                        childColumns = "userId",
+                        onDelete = ForeignKey.CASCADE
                 )
         },
-        indices = { @Index(value = "categoryId", unique = true) }
+        indices = {
+                @Index(value = {"userId", "categoryId"}, unique = true),
+                @Index(value = "categoryId"),
+                @Index(value = "userId")
+        }
 )
 public class Budget {
 
     @PrimaryKey(autoGenerate = true)
     private int id;
 
-    private int categoryId;      // FK → Category (1 Category → 0..1 Budget)
-    private double limitAmount;  // spending limit
-    private long periodStart;    // start of budget period
-    private long periodEnd;      // end of budget period
+    private int userId;
+    private int categoryId;
+    private double limitAmount;
+    private long periodStart;
+    private long periodEnd;
 
     public Budget() {}
 
-    public Budget(int categoryId, double limitAmount, long periodStart, long periodEnd) {
-        this.categoryId   = categoryId;
-        this.limitAmount  = limitAmount;
-        this.periodStart  = periodStart;
-        this.periodEnd    = periodEnd;
+    public Budget(int userId, int categoryId, double limitAmount, long periodStart, long periodEnd) {
+        this.userId = userId;
+        this.categoryId = categoryId;
+        this.limitAmount = limitAmount;
+        this.periodStart = periodStart;
+        this.periodEnd = periodEnd;
     }
 
-    // Getters & Setters
-    public int getId()                    { return id; }
-    public void setId(int id)             { this.id = id; }
+    public int getId() {
+        return id;
+    }
 
-    public int getCategoryId()            { return categoryId; }
-    public void setCategoryId(int v)      { this.categoryId = v; }
+    public void setId(int id) {
+        this.id = id;
+    }
 
-    public double getLimitAmount()        { return limitAmount; }
-    public void setLimitAmount(double v)  { this.limitAmount = v; }
+    public int getUserId() {
+        return userId;
+    }
 
-    public long getPeriodStart()          { return periodStart; }
-    public void setPeriodStart(long v)    { this.periodStart = v; }
+    public void setUserId(int userId) {
+        this.userId = userId;
+    }
 
-    public long getPeriodEnd()            { return periodEnd; }
-    public void setPeriodEnd(long v)      { this.periodEnd = v; }
+    public int getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(int categoryId) {
+        this.categoryId = categoryId;
+    }
+
+    public double getLimitAmount() {
+        return limitAmount;
+    }
+
+    public void setLimitAmount(double limitAmount) {
+        this.limitAmount = limitAmount;
+    }
+
+    public long getPeriodStart() {
+        return periodStart;
+    }
+
+    public void setPeriodStart(long periodStart) {
+        this.periodStart = periodStart;
+    }
+
+    public long getPeriodEnd() {
+        return periodEnd;
+    }
+
+    public void setPeriodEnd(long periodEnd) {
+        this.periodEnd = periodEnd;
+    }
 }

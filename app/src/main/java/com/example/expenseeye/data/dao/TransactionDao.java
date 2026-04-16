@@ -15,8 +15,14 @@ import java.util.List;
 @Dao
 public interface TransactionDao {
 
-    @Query("SELECT * FROM transactions ORDER BY date DESC")
-    LiveData<List<Transaction>> getAllTransactions();
+    @Query(
+            "SELECT t.* " +
+                    "FROM transactions t " +
+                    "JOIN accounts a ON t.accountId = a.id " +
+                    "WHERE a.userId = :userId " +
+                    "ORDER BY t.date DESC"
+    )
+    LiveData<List<Transaction>> getTransactionsForUser(int userId);
 
     @Insert
     void insert(Transaction transaction);
@@ -34,7 +40,8 @@ public interface TransactionDao {
                     "FROM transactions t " +
                     "JOIN accounts a ON t.accountId = a.id " +
                     "JOIN categories c ON t.categoryId = c.id " +
+                    "WHERE a.userId = :userId " +
                     "ORDER BY t.date DESC"
     )
-    LiveData<List<TransactionWithDetails>> getTransactionsWithDetails();
+    LiveData<List<TransactionWithDetails>> getTransactionsWithDetailsForUser(int userId);
 }

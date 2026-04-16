@@ -34,13 +34,13 @@ public class BudgetRepo {
         executor.execute(() -> budgetDao.delete(budget));
     }
 
-    public LiveData<List<Budget>> getAllBudgets() {
-        return budgetDao.getAllBudgets();
+    public LiveData<List<Budget>> getBudgetsForUser(int userId) {
+        return budgetDao.getBudgetsForUser(userId);
     }
 
-    // Returns amount spent for a category within the budget's period (blocking – call off main thread).
     public double getSpentForBudget(Budget budget) {
         return budgetDao.getSpentForCategory(
+                budget.getUserId(),
                 budget.getCategoryId(),
                 budget.getPeriodStart(),
                 budget.getPeriodEnd()

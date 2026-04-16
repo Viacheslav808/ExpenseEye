@@ -14,4 +14,7 @@ public interface CredentialDao {
 
     @Query("SELECT * FROM credentials WHERE email = :email")
     Credential getCredentialByEmail(String email);
+
+    @Query("SELECT * FROM credentials WHERE user_id = :userId LIMIT 1")
+    Credential getCredentialByUserId(int userId);
 }
