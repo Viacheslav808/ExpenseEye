@@ -72,7 +72,9 @@ public class BudgetFragment extends Fragment {
 
     private void showAddBudgetDialog() {
         if (categoryList.isEmpty()) {
-            Toast.makeText(requireContext(), "No categories available", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(),
+                    "No categories available. Please add a category first.",
+                    Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -80,46 +82,97 @@ public class BudgetFragment extends Fragment {
                 .inflate(R.layout.dialog_add_budget, null);
 
         Spinner spinnerCategory = dialogView.findViewById(R.id.spinner_budget_category);
-        EditText etLimit        = dialogView.findViewById(R.id.et_budget_limit);
+        EditText etLimit = dialogView.findViewById(R.id.et_budget_limit);
 
         ArrayAdapter<Category> catAdapter = new ArrayAdapter<>(
                 requireContext(), android.R.layout.simple_spinner_item, categoryList);
         catAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerCategory.setAdapter(catAdapter);
 
-        new AlertDialog.Builder(requireContext())
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
                 .setTitle("Create Budget")
                 .setView(dialogView)
-                .setPositiveButton("Save", (dialog, which) -> {
-                    String limitStr = etLimit.getText().toString().trim();
-                    if (limitStr.isEmpty()) {
-                        Toast.makeText(requireContext(), "Enter a limit amount", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    double limit = Double.parseDouble(limitStr);
-                    Category selected = (Category) spinnerCategory.getSelectedItem();
-
-                    // Default period: current calendar month
-                    Calendar cal = Calendar.getInstance();
-                    cal.set(Calendar.DAY_OF_MONTH, 1);
-                    cal.set(Calendar.HOUR_OF_DAY, 0);
-                    cal.set(Calendar.MINUTE, 0);
-                    cal.set(Calendar.SECOND, 0);
-                    cal.set(Calendar.MILLISECOND, 0);
-                    long start = cal.getTimeInMillis();
-
-                    cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH));
-                    cal.set(Calendar.HOUR_OF_DAY, 23);
-                    cal.set(Calendar.MINUTE, 59);
-                    cal.set(Calendar.SECOND, 59);
-                    long end = cal.getTimeInMillis();
-
-                    Budget budget = new Budget(selected.getId(), limit, start, end);
-                    viewModel.insertBudget(budget);
-                    Toast.makeText(requireContext(), "Budget created!", Toast.LENGTH_SHORT).show();
-                })
+                .setPositiveButton("Save", null) // override below to prevent auto-dismiss on invalid input
                 .setNegativeButton("Cancel", null)
-                .show();
+                .create();
+
+        dialog.setOnShowListener(d -> {
+            Button saveBtn = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            saveBtn.setOnClickListener(v -> {
+
+                // --- VALIDATION ---
+                String limitStr = etLimit.getText().toString().trim();
+
+                if (limitStr.isEmpty()) {
+                    etLimit.setError("Enter a limit amount");
+                    return;
+                }
+
+                double limit;
+                try {
+                    limit = Double.parseDouble(limitStr);
+                } catch (NumberFormatException e) {
+                    etLimit.setError("Enter a valid number");
+                    return;
+                }
+
+                if (limit <= 0) {
+                    etLimit.setError("Amount must be greater than zero");
+                    return;
+                }
+
+                if (limit > 1_000_000) {
+                    etLimit.setError("Amount is unrealistically large");
+                    return;
+                }
+
+                Category selected = (Category) spinnerCategory.getSelectedItem();
+                if (selected == null) {
+                    Toast.makeText(requireContext(),
+                            "Please select a category", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Prevent duplicate budgets for the same category
+                List<BudgetEvaluation> current = viewModel.getEvaluations().getValue();
+                if (current != null) {
+                    for (BudgetEvaluation be : current) {
+                        if (be.getCategoryName().equals(selected.getName())) {
+                            Toast.makeText(requireContext(),
+                                    "A budget already exists for this category",
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                    }
+                }
+
+                // --- BUILD PERIOD (current calendar month) ---
+                Calendar cal = Calendar.getInstance();
+                cal.set(Calendar.DAY_OF_MONTH, 1);
+                cal.set(Calendar.HOUR_OF_DAY, 0);
+                cal.set(Calendar.MINUTE, 0);
+                cal.set(Calendar.SECOND, 0);
+                cal.set(Calendar.MILLISECOND, 0);
+                long start = cal.getTimeInMillis();
+
+                cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH));
+                cal.set(Calendar.HOUR_OF_DAY, 23);
+                cal.set(Calendar.MINUTE, 59);
+                cal.set(Calendar.SECOND, 59);
+                long end = cal.getTimeInMillis();
+
+                // --- SAVE ---
+                Budget budget = new Budget("",selected.getId(), limit, start, end);
+                viewModel.insertBudget(budget);
+
+                Toast.makeText(requireContext(),
+                        "Budget created for " + selected.getName(),
+                        Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            });
+        });
+
+        dialog.show();
     }
 
     private void confirmDelete(Budget budget) {
