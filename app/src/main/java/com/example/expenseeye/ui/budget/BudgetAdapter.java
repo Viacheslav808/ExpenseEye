@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -11,7 +12,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.expenseeye.R;
-import com.example.expenseeye.data.model.Budget;
 import com.example.expenseeye.model.reports.BudgetEvaluation;
 
 import java.text.NumberFormat;
@@ -20,15 +20,18 @@ import java.util.Locale;
 
 public class BudgetAdapter extends RecyclerView.Adapter<BudgetAdapter.ViewHolder> {
 
-    public interface OnDeleteListener { void onDelete(BudgetEvaluation eval); }
+    public interface OnBudgetActionListener {
+        void onEdit(BudgetEvaluation eval);
+        void onDelete(BudgetEvaluation eval);
+    }
 
     private List<BudgetEvaluation> items;
-    private final OnDeleteListener deleteListener;
+    private final OnBudgetActionListener actionListener;
     private final NumberFormat currency = NumberFormat.getCurrencyInstance(Locale.CANADA);
 
-    public BudgetAdapter(List<BudgetEvaluation> items, OnDeleteListener listener) {
+    public BudgetAdapter(List<BudgetEvaluation> items, OnBudgetActionListener listener) {
         this.items = items;
-        this.deleteListener = listener;
+        this.actionListener = listener;
     }
 
     public void replaceItems(List<BudgetEvaluation> newItems) {
@@ -62,10 +65,12 @@ public class BudgetAdapter extends RecyclerView.Adapter<BudgetAdapter.ViewHolder
                 : Color.parseColor("#4CAF50");
         holder.tvStatus.setTextColor(color);
 
-        // Long-press to delete
-        holder.itemView.setOnLongClickListener(v -> {
-            if (deleteListener != null) deleteListener.onDelete(eval);
-            return true;
+        holder.btnEdit.setOnClickListener(v -> {
+            if (actionListener != null) actionListener.onEdit(eval);
+        });
+
+        holder.btnDelete.setOnClickListener(v -> {
+            if (actionListener != null) actionListener.onDelete(eval);
         });
     }
 
@@ -75,6 +80,7 @@ public class BudgetAdapter extends RecyclerView.Adapter<BudgetAdapter.ViewHolder
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvCategory, tvStatus, tvSpent, tvRemaining;
         ProgressBar progressBar;
+        Button btnEdit, btnDelete;
 
         ViewHolder(View v) {
             super(v);
@@ -84,6 +90,8 @@ public class BudgetAdapter extends RecyclerView.Adapter<BudgetAdapter.ViewHolder
             tvSpent = v.findViewById(R.id.tv_budget_spent);
             tvRemaining = v.findViewById(R.id.tv_budget_remaining);
             progressBar = v.findViewById(R.id.progress_budget);
+            btnEdit = v.findViewById(R.id.btn_edit_budget);
+            btnDelete = v.findViewById(R.id.btn_delete_budget);
         }
     }
 }

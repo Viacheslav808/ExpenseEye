@@ -14,10 +14,12 @@
         android:orientation="vertical"
         android:padding="14dp">
 
+        <!-- Top row: name on left, status on right -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
             <TextView
                 android:id="@+id/tv_budget_name"
@@ -67,6 +69,44 @@
             android:layout_marginTop="4dp"
             android:textSize="13sp"
             android:textColor="#666666" />
+
+        <!-- Action buttons: Edit + Delete -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            android:gravity="end">
+
+            <Button
+                android:id="@+id/btn_edit_budget"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Edit"
+                android:textSize="12sp"
+                android:minHeight="0dp"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:backgroundTint="#3B82F6"
+                android:textColor="#FFFFFF" />
+
+            <Button
+                android:id="@+id/btn_delete_budget"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Delete"
+                android:textSize="12sp"
+                android:minHeight="0dp"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:backgroundTint="#EF4444"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
 
     </LinearLayout>
 </androidx.cardview.widget.CardView>

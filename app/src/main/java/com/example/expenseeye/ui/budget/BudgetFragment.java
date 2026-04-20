@@ -23,18 +23,15 @@ import com.example.expenseeye.data.model.Budget;
 import com.example.expenseeye.data.model.Category;
 import com.example.expenseeye.model.reports.BudgetEvaluation;
 
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Locale;
 
 public class BudgetFragment extends Fragment {
 
     private BudgetViewModel viewModel;
     private BudgetAdapter adapter;
     private List<Category> categoryList = new ArrayList<>();
-    private final NumberFormat currency = NumberFormat.getCurrencyInstance(Locale.CANADA);
 
     public BudgetFragment() {}
 
@@ -55,11 +52,21 @@ public class BudgetFragment extends Fragment {
         RecyclerView recyclerView = view.findViewById(R.id.recycler_budgets);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        adapter = new BudgetAdapter(new ArrayList<>(), eval -> confirmDelete(eval));
+        adapter = new BudgetAdapter(new ArrayList<>(), new BudgetAdapter.OnBudgetActionListener() {
+            @Override
+            public void onEdit(BudgetEvaluation eval) {
+                showBudgetDialog(eval);
+            }
+
+            @Override
+            public void onDelete(BudgetEvaluation eval) {
+                confirmDelete(eval);
+            }
+        });
         recyclerView.setAdapter(adapter);
 
         Button btnAdd = view.findViewById(R.id.btn_add_budget);
-        btnAdd.setOnClickListener(v -> showAddBudgetDialog());
+        btnAdd.setOnClickListener(v -> showBudgetDialog(null));
 
         viewModel.getCategories().observe(getViewLifecycleOwner(), cats -> {
             categoryList = cats != null ? cats : new ArrayList<>();
@@ -70,13 +77,20 @@ public class BudgetFragment extends Fragment {
         });
     }
 
-    private void showAddBudgetDialog() {
+    /**
+     * Unified dialog for create AND edit.
+     * - Pass null to create a new budget
+     * - Pass an existing BudgetEvaluation to edit it
+     */
+    private void showBudgetDialog(@Nullable BudgetEvaluation existing) {
         if (categoryList.isEmpty()) {
             Toast.makeText(requireContext(),
                     "No categories available. Please add a category first.",
                     Toast.LENGTH_SHORT).show();
             return;
         }
+
+        final boolean isEdit = existing != null;
 
         View dialogView = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialog_add_budget, null);
@@ -90,10 +104,23 @@ public class BudgetFragment extends Fragment {
         catAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerCategory.setAdapter(catAdapter);
 
+        // Prefill fields when editing
+        if (isEdit) {
+            etName.setText(existing.getName());
+            etLimit.setText(String.valueOf(existing.getLimit()));
+            // Preselect the category in the spinner
+            for (int i = 0; i < categoryList.size(); i++) {
+                if (categoryList.get(i).getName().equals(existing.getCategoryName())) {
+                    spinnerCategory.setSelection(i);
+                    break;
+                }
+            }
+        }
+
         AlertDialog dialog = new AlertDialog.Builder(requireContext())
-                .setTitle("Create Budget")
+                .setTitle(isEdit ? "Edit Budget" : "Create Budget")
                 .setView(dialogView)
-                .setPositiveButton("Save", null) // override below to prevent auto-dismiss on invalid input
+                .setPositiveButton(isEdit ? "Save Changes" : "Create", null)
                 .setNegativeButton("Cancel", null)
                 .create();
 
@@ -158,13 +185,22 @@ public class BudgetFragment extends Fragment {
                 cal.set(Calendar.SECOND, 59);
                 long end = cal.getTimeInMillis();
 
-                // --- SAVE ---
-                Budget budget = new Budget(name, selected.getId(), limit, start, end);
-                viewModel.insertBudget(budget);
+                // --- SAVE or UPDATE ---
+                if (isEdit) {
+                    Budget updated = new Budget(name, selected.getId(), limit, start, end);
+                    updated.setId(existing.getBudgetId()); // keep the same id so Room updates in place
+                    viewModel.updateBudget(updated);
+                    Toast.makeText(requireContext(),
+                            "Budget \"" + name + "\" updated",
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    Budget budget = new Budget(name, selected.getId(), limit, start, end);
+                    viewModel.insertBudget(budget);
+                    Toast.makeText(requireContext(),
+                            "Budget \"" + name + "\" created",
+                            Toast.LENGTH_SHORT).show();
+                }
 
-                Toast.makeText(requireContext(),
-                        "Budget \"" + name + "\" created",
-                        Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             });
         });
@@ -176,7 +212,12 @@ public class BudgetFragment extends Fragment {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Delete Budget")
                 .setMessage("Remove \"" + eval.getDisplayName() + "\"?")
-                .setPositiveButton("Delete", (d, w) -> viewModel.deleteBudgetById(eval.getBudgetId()))
+                .setPositiveButton("Delete", (d, w) -> {
+                    viewModel.deleteBudgetById(eval.getBudgetId());
+                    Toast.makeText(requireContext(),
+                            "Budget deleted",
+                            Toast.LENGTH_SHORT).show();
+                })
                 .setNegativeButton("Cancel", null)
                 .show();
     }
