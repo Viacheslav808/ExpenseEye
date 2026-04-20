@@ -12,6 +12,11 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Thin wrapper around {@link BudgetDao} that guarantees all writes
+ * happen on a background thread. Reads return LiveData so observers
+ * stay on the main thread automatically.
+ */
 public class BudgetRepo {
 
     private final BudgetDao budgetDao;
@@ -19,26 +24,36 @@ public class BudgetRepo {
 
     public BudgetRepo(Context context) {
         ExpenseEyeDatabase db = ExpenseEyeDatabase.getInstance(context);
-        budgetDao = db.budgetDao();
+        this.budgetDao = db.budgetDao();
     }
 
+    // ---- Writes (off main thread) ----
+
     public void insertBudget(Budget budget) {
+        if (budget == null) return;
         executor.execute(() -> budgetDao.insert(budget));
     }
 
     public void updateBudget(Budget budget) {
+        if (budget == null) return;
         executor.execute(() -> budgetDao.update(budget));
     }
 
     public void deleteBudget(Budget budget) {
+        if (budget == null) return;
         executor.execute(() -> budgetDao.delete(budget));
     }
+
+    // ---- Reads ----
 
     public LiveData<List<Budget>> getAllBudgets() {
         return budgetDao.getAllBudgets();
     }
 
-    // Returns amount spent for a category within the budget's period (blocking – call off main thread).
+    /**
+     * Sums transactions for this budget's category within its period.
+     * Blocking — must be called off the main thread.
+     */
     public double getSpentForBudget(Budget budget) {
         return budgetDao.getSpentForCategory(
                 budget.getCategoryId(),
