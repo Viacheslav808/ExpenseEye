@@ -25,14 +25,24 @@ public class BudgetEvaluation {
 
     public double getRemaining() { return limit - spent; }
 
-    // 0.0 – 1.0 usage ratio (can exceed 1.0 if over budget)
+    /** 0.0 – 1.0+ usage ratio (can exceed 1.0 if over budget). */
     public double getUsageRatio() { return limit > 0 ? spent / limit : 0; }
+
+    /** Percentage used as an int (can exceed 100 if over budget). */
+    public int getPercentUsed() {
+        return (int) Math.round(getUsageRatio() * 100);
+    }
 
     public boolean isOverBudget() { return spent > limit; }
 
+    /** True when at or above the warning threshold (90%) but not yet over budget. */
+    public boolean isNearLimit() {
+        return !isOverBudget() && getUsageRatio() >= 0.9;
+    }
+
     public String getStatusLabel() {
         if (isOverBudget()) return "Over Budget";
-        if (getUsageRatio() >= 0.9) return "Near Limit";
+        if (isNearLimit()) return "Near Limit";
         return "On Track";
     }
 
