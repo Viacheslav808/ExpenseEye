@@ -1,6 +1,7 @@
 package com.example.expenseeye.ui.budget;
 
 import android.app.AlertDialog;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,16 +23,23 @@ import com.example.expenseeye.R;
 import com.example.expenseeye.data.model.Budget;
 import com.example.expenseeye.data.model.Category;
 import com.example.expenseeye.model.reports.BudgetEvaluation;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class BudgetFragment extends Fragment {
 
     private BudgetViewModel viewModel;
     private BudgetAdapter adapter;
     private List<Category> categoryList = new ArrayList<>();
+
+    // Remembers which alert level we last showed per budget so we don't spam the user.
+    // Key = budget id, Value = last AlertLevel we notified on
+    private final Map<Integer, BudgetEvaluation.AlertLevel> lastAlertedLevel = new HashMap<>();
 
     public BudgetFragment() {}
 
@@ -54,14 +62,10 @@ public class BudgetFragment extends Fragment {
 
         adapter = new BudgetAdapter(new ArrayList<>(), new BudgetAdapter.OnBudgetActionListener() {
             @Override
-            public void onEdit(BudgetEvaluation eval) {
-                showBudgetDialog(eval);
-            }
+            public void onEdit(BudgetEvaluation eval) { showBudgetDialog(eval); }
 
             @Override
-            public void onDelete(BudgetEvaluation eval) {
-                confirmDelete(eval);
-            }
+            public void onDelete(BudgetEvaluation eval) { confirmDelete(eval); }
         });
         recyclerView.setAdapter(adapter);
 
@@ -73,15 +77,66 @@ public class BudgetFragment extends Fragment {
         });
 
         viewModel.getEvaluations().observe(getViewLifecycleOwner(), evals -> {
-            adapter.replaceItems(evals != null ? evals : new ArrayList<>());
+            List<BudgetEvaluation> list = evals != null ? evals : new ArrayList<>();
+            adapter.replaceItems(list);
+            checkThresholds(list);
         });
     }
 
     /**
-     * Unified dialog for create AND edit.
-     * - Pass null to create a new budget
-     * - Pass an existing BudgetEvaluation to edit it
+     * Scans all budget evaluations and shows a Snackbar for any that have crossed
+     * a threshold since the last update. Tracks per-budget state to avoid repeat alerts.
      */
+    private void checkThresholds(List<BudgetEvaluation> evaluations) {
+        for (BudgetEvaluation eval : evaluations) {
+            BudgetEvaluation.AlertLevel current = eval.getAlertLevel();
+            BudgetEvaluation.AlertLevel previous =
+                    lastAlertedLevel.get(eval.getBudgetId());
+
+            // Only alert when the level changes to something worse than before
+            boolean shouldAlert = false;
+            if (current == BudgetEvaluation.AlertLevel.EXCEEDED
+                    && previous != BudgetEvaluation.AlertLevel.EXCEEDED) {
+                shouldAlert = true;
+            } else if (current == BudgetEvaluation.AlertLevel.WARNING
+                    && previous == null) {
+                shouldAlert = true;
+            }
+
+            if (shouldAlert) {
+                showThresholdAlert(eval, current);
+            }
+
+            // Always update last-known level (even NONE so we reset when spending drops)
+            lastAlertedLevel.put(eval.getBudgetId(), current);
+        }
+    }
+
+    private void showThresholdAlert(BudgetEvaluation eval,
+                                    BudgetEvaluation.AlertLevel level) {
+        View root = getView();
+        if (root == null) return;
+
+        String message;
+        int color;
+
+        if (level == BudgetEvaluation.AlertLevel.EXCEEDED) {
+            message = "⚠️  \"" + eval.getDisplayName() + "\" is over budget ("
+                    + eval.getPercentUsed() + "%)";
+            color = Color.parseColor("#EF4444");
+        } else { // WARNING
+            message = "⚡  \"" + eval.getDisplayName() + "\" is near its limit ("
+                    + eval.getPercentUsed() + "%)";
+            color = Color.parseColor("#F59E0B");
+        }
+
+        Snackbar bar = Snackbar.make(root, message, Snackbar.LENGTH_LONG);
+        bar.getView().setBackgroundColor(color);
+        bar.setActionTextColor(Color.WHITE);
+        bar.setAction("OK", v -> bar.dismiss());
+        bar.show();
+    }
+
     private void showBudgetDialog(@Nullable BudgetEvaluation existing) {
         if (categoryList.isEmpty()) {
             Toast.makeText(requireContext(),
@@ -104,11 +159,9 @@ public class BudgetFragment extends Fragment {
         catAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerCategory.setAdapter(catAdapter);
 
-        // Prefill fields when editing
         if (isEdit) {
             etName.setText(existing.getName());
             etLimit.setText(String.valueOf(existing.getLimit()));
-            // Preselect the category in the spinner
             for (int i = 0; i < categoryList.size(); i++) {
                 if (categoryList.get(i).getName().equals(existing.getCategoryName())) {
                     spinnerCategory.setSelection(i);
@@ -128,41 +181,22 @@ public class BudgetFragment extends Fragment {
             Button saveBtn = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             saveBtn.setOnClickListener(v -> {
 
-                // --- NAME VALIDATION ---
                 String name = etName.getText().toString().trim();
-                if (name.isEmpty()) {
-                    etName.setError("Enter a budget name");
-                    return;
-                }
-                if (name.length() < 2) {
-                    etName.setError("Name is too short");
-                    return;
-                }
+                if (name.isEmpty()) { etName.setError("Enter a budget name"); return; }
+                if (name.length() < 2) { etName.setError("Name is too short"); return; }
 
-                // --- LIMIT VALIDATION ---
                 String limitStr = etLimit.getText().toString().trim();
-                if (limitStr.isEmpty()) {
-                    etLimit.setError("Enter a limit amount");
-                    return;
-                }
+                if (limitStr.isEmpty()) { etLimit.setError("Enter a limit amount"); return; }
 
                 double limit;
                 try {
                     limit = Double.parseDouble(limitStr);
                 } catch (NumberFormatException e) {
-                    etLimit.setError("Enter a valid number");
-                    return;
+                    etLimit.setError("Enter a valid number"); return;
                 }
-                if (limit <= 0) {
-                    etLimit.setError("Amount must be greater than zero");
-                    return;
-                }
-                if (limit > 1_000_000) {
-                    etLimit.setError("Amount is unrealistically large");
-                    return;
-                }
+                if (limit <= 0) { etLimit.setError("Amount must be greater than zero"); return; }
+                if (limit > 1_000_000) { etLimit.setError("Amount is unrealistically large"); return; }
 
-                // --- CATEGORY VALIDATION ---
                 Category selected = (Category) spinnerCategory.getSelectedItem();
                 if (selected == null) {
                     Toast.makeText(requireContext(),
@@ -170,7 +204,6 @@ public class BudgetFragment extends Fragment {
                     return;
                 }
 
-                // --- BUILD PERIOD (current calendar month) ---
                 Calendar cal = Calendar.getInstance();
                 cal.set(Calendar.DAY_OF_MONTH, 1);
                 cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -185,22 +218,20 @@ public class BudgetFragment extends Fragment {
                 cal.set(Calendar.SECOND, 59);
                 long end = cal.getTimeInMillis();
 
-                // --- SAVE or UPDATE ---
                 if (isEdit) {
                     Budget updated = new Budget(name, selected.getId(), limit, start, end);
-                    updated.setId(existing.getBudgetId()); // keep the same id so Room updates in place
+                    updated.setId(existing.getBudgetId());
                     viewModel.updateBudget(updated);
+                    // Reset its alert state so a new threshold crossing can re-trigger
+                    lastAlertedLevel.remove(existing.getBudgetId());
                     Toast.makeText(requireContext(),
-                            "Budget \"" + name + "\" updated",
-                            Toast.LENGTH_SHORT).show();
+                            "Budget \"" + name + "\" updated", Toast.LENGTH_SHORT).show();
                 } else {
                     Budget budget = new Budget(name, selected.getId(), limit, start, end);
                     viewModel.insertBudget(budget);
                     Toast.makeText(requireContext(),
-                            "Budget \"" + name + "\" created",
-                            Toast.LENGTH_SHORT).show();
+                            "Budget \"" + name + "\" created", Toast.LENGTH_SHORT).show();
                 }
-
                 dialog.dismiss();
             });
         });
@@ -214,9 +245,9 @@ public class BudgetFragment extends Fragment {
                 .setMessage("Remove \"" + eval.getDisplayName() + "\"?")
                 .setPositiveButton("Delete", (d, w) -> {
                     viewModel.deleteBudgetById(eval.getBudgetId());
+                    lastAlertedLevel.remove(eval.getBudgetId()); // clear its alert history
                     Toast.makeText(requireContext(),
-                            "Budget deleted",
-                            Toast.LENGTH_SHORT).show();
+                            "Budget deleted", Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton("Cancel", null)
                 .show();

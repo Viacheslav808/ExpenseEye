@@ -95,6 +95,7 @@ public class FinanceRepo {
         if (spent > budget.getLimitAmount()) {
             Log.d("BudgetCheck", "OVER BUDGET — sending notification");
             notificationService.sendBudgetAlert(
+                    NotificationService.Level.EXCEEDED,
                     "You exceeded the budget for category " + categoryId
             );
         }

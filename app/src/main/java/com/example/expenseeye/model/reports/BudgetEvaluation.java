@@ -2,6 +2,13 @@ package com.example.expenseeye.model.reports;
 
 public class BudgetEvaluation {
 
+    /** Threshold at which we warn the user (90% of limit). */
+    public static final double WARNING_THRESHOLD = 0.90;
+    /** Threshold at which the budget is considered exceeded. */
+    public static final double EXCEEDED_THRESHOLD = 1.00;
+
+    public enum AlertLevel { NONE, WARNING, EXCEEDED }
+
     private final int budgetId;
     private final String name;
     private final String categoryName;
@@ -33,17 +40,26 @@ public class BudgetEvaluation {
         return (int) Math.round(getUsageRatio() * 100);
     }
 
-    public boolean isOverBudget() { return spent > limit; }
+    public boolean isOverBudget() { return getUsageRatio() >= EXCEEDED_THRESHOLD; }
 
-    /** True when at or above the warning threshold (90%) but not yet over budget. */
+    /** True when at or above the warning threshold but not yet over budget. */
     public boolean isNearLimit() {
-        return !isOverBudget() && getUsageRatio() >= 0.9;
+        return !isOverBudget() && getUsageRatio() >= WARNING_THRESHOLD;
+    }
+
+    /** Classifies the evaluation into an alert level for notifications. */
+    public AlertLevel getAlertLevel() {
+        if (isOverBudget()) return AlertLevel.EXCEEDED;
+        if (isNearLimit())  return AlertLevel.WARNING;
+        return AlertLevel.NONE;
     }
 
     public String getStatusLabel() {
-        if (isOverBudget()) return "Over Budget";
-        if (isNearLimit()) return "Near Limit";
-        return "On Track";
+        switch (getAlertLevel()) {
+            case EXCEEDED: return "Over Budget";
+            case WARNING:  return "Near Limit";
+            default:       return "On Track";
+        }
     }
 
     /** Display label: the custom name if set, otherwise falls back to category. */
