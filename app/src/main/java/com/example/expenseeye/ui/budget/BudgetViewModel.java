@@ -16,7 +16,6 @@ import com.example.expenseeye.data.repository.FinanceRepoProvider;
 import com.example.expenseeye.model.reports.BudgetEvaluation;
 import com.example.expenseeye.model.reports.BudgetEvaluator;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,30 +32,26 @@ public class BudgetViewModel extends AndroidViewModel {
     private final LiveData<List<Category>> categories;
     private final LiveData<List<Transaction>> transactions;
 
-    // Evaluated results combining budgets + transactions
     private final MediatorLiveData<List<BudgetEvaluation>> evaluations = new MediatorLiveData<>();
 
     public BudgetViewModel(@NonNull Application application) {
         super(application);
-        budgetRepo   = new BudgetRepo(application);
+        budgetRepo = new BudgetRepo(application);
         financeRepo = FinanceRepoProvider.get(application);
 
-
-        budgets      = budgetRepo.getAllBudgets();
-        categories   = financeRepo.getAllCategories();
+        budgets = budgetRepo.getAllBudgets();
+        categories = financeRepo.getAllCategories();
         transactions = financeRepo.getAllTransactions();
 
-        // Re-evaluate whenever budgets or transactions change
-        evaluations.addSource(budgets,      b -> recompute());
+        evaluations.addSource(budgets, b -> recompute());
         evaluations.addSource(transactions, t -> recompute());
-        evaluations.addSource(categories,   c -> recompute());
+        evaluations.addSource(categories, c -> recompute());
     }
 
     private void recompute() {
-        List<Budget>      b = budgets.getValue();
+        List<Budget> b = budgets.getValue();
         List<Transaction> t = transactions.getValue();
-        List<Category>    c = categories.getValue();
-
+        List<Category> c = categories.getValue();
         if (b == null || t == null || c == null) return;
 
         Map<Integer, String> nameMap = new HashMap<>();
@@ -66,14 +61,27 @@ public class BudgetViewModel extends AndroidViewModel {
     }
 
     public LiveData<List<BudgetEvaluation>> getEvaluations() { return evaluations; }
-    public LiveData<List<Budget>>           getBudgets()     { return budgets; }
-    public LiveData<List<Category>>         getCategories()  { return categories; }
+    public LiveData<List<Budget>> getBudgets() { return budgets; }
+    public LiveData<List<Category>> getCategories() { return categories; }
 
     public void insertBudget(Budget budget) {
         executor.execute(() -> budgetRepo.insertBudget(budget));
     }
 
-    public void deleteBudget(Budget budget) {
-        executor.execute(() -> budgetRepo.deleteBudget(budget));
+    public void updateBudget(Budget budget) {
+        executor.execute(() -> budgetRepo.updateBudget(budget));
+    }
+
+    public void deleteBudgetById(int budgetId) {
+        executor.execute(() -> {
+            List<Budget> all = budgets.getValue();
+            if (all == null) return;
+            for (Budget bg : all) {
+                if (bg.getId() == budgetId) {
+                    budgetRepo.deleteBudget(bg);
+                    break;
+                }
+            }
+        });
     }
 }

@@ -7,8 +7,25 @@
     android:background="#1E293B">
 
     <TextView
+        android:text="Budget Name"
+        android:textSize="14sp"
+        android:textColor="#FFFFFF"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/et_budget_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:inputType="textCapWords"
+        android:maxLength="40"
+        android:hint="e.g. Weekly Groceries" />
+
+    <TextView
         android:text="Category"
         android:textSize="14sp"
+        android:textColor="#FFFFFF"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
 
@@ -17,12 +34,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp"
-        android:popupBackground="#1E293B"
-        />
+        android:popupBackground="#1E293B" />
 
     <TextView
         android:text="Monthly Limit ($)"
         android:textSize="14sp"
+        android:textColor="#FFFFFF"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
 
@@ -31,6 +48,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:inputType="numberDecimal"
-        android:hint="e.g. 500.00"/>
+        android:hint="e.g. 500.00" />
 
 </LinearLayout>

@@ -9,29 +9,30 @@ import java.util.List;
 import java.util.Map;
 
 // Pure-logic class: evaluates budgets against a list of transactions.
-
 public class BudgetEvaluator {
+
     public static List<BudgetEvaluation> evaluate(
             List<Budget> budgets,
             List<Transaction> transactions,
             Map<Integer, String> categoryNames
     ) {
         List<BudgetEvaluation> results = new ArrayList<>();
-
         for (Budget budget : budgets) {
             double spent = sumSpent(budget, transactions);
-            String name  = categoryNames.getOrDefault(budget.getCategoryId(), "Unknown");
-            results.add(new BudgetEvaluation(name, budget.getLimitAmount(), spent));
+            String categoryName = categoryNames.getOrDefault(budget.getCategoryId(), "Unknown");
+            results.add(new BudgetEvaluation(
+                    budget.getId(),
+                    budget.getName(),
+                    categoryName,
+                    budget.getLimitAmount(),
+                    spent
+            ));
         }
-
         return results;
     }
 
     private static double sumSpent(Budget budget, List<Transaction> transactions) {
-
-
         Calendar cal = Calendar.getInstance();
-
         cal.set(Calendar.DAY_OF_MONTH, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);

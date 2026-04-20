@@ -20,16 +20,14 @@ import java.util.Locale;
 
 public class BudgetAdapter extends RecyclerView.Adapter<BudgetAdapter.ViewHolder> {
 
-    public interface OnDeleteListener { void onDelete(Budget budget); }
+    public interface OnDeleteListener { void onDelete(BudgetEvaluation eval); }
 
     private List<BudgetEvaluation> items;
     private final OnDeleteListener deleteListener;
     private final NumberFormat currency = NumberFormat.getCurrencyInstance(Locale.CANADA);
 
-    // We keep a parallel list of raw Budget objects for delete callbacks
-    // (populated via replaceItems — evaluations carry enough info for display for now)
     public BudgetAdapter(List<BudgetEvaluation> items, OnDeleteListener listener) {
-        this.items          = items;
+        this.items = items;
         this.deleteListener = listener;
     }
 
@@ -50,6 +48,7 @@ public class BudgetAdapter extends RecyclerView.Adapter<BudgetAdapter.ViewHolder
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         BudgetEvaluation eval = items.get(position);
 
+        holder.tvName.setText(eval.getDisplayName());
         holder.tvCategory.setText(eval.getCategoryName());
         holder.tvStatus.setText(eval.getStatusLabel());
         holder.tvSpent.setText(currency.format(eval.getSpent()) + " / " + currency.format(eval.getLimit()));
@@ -62,22 +61,29 @@ public class BudgetAdapter extends RecyclerView.Adapter<BudgetAdapter.ViewHolder
                 : eval.getUsageRatio() >= 0.9 ? Color.parseColor("#FF9800")
                 : Color.parseColor("#4CAF50");
         holder.tvStatus.setTextColor(color);
+
+        // Long-press to delete
+        holder.itemView.setOnLongClickListener(v -> {
+            if (deleteListener != null) deleteListener.onDelete(eval);
+            return true;
+        });
     }
 
     @Override
     public int getItemCount() { return items.size(); }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvCategory, tvStatus, tvSpent, tvRemaining;
+        TextView tvName, tvCategory, tvStatus, tvSpent, tvRemaining;
         ProgressBar progressBar;
 
         ViewHolder(View v) {
             super(v);
-            tvCategory   = v.findViewById(R.id.tv_budget_category);
-            tvStatus     = v.findViewById(R.id.tv_budget_status);
-            tvSpent      = v.findViewById(R.id.tv_budget_spent);
-            tvRemaining  = v.findViewById(R.id.tv_budget_remaining);
-            progressBar  = v.findViewById(R.id.progress_budget);
+            tvName = v.findViewById(R.id.tv_budget_name);
+            tvCategory = v.findViewById(R.id.tv_budget_category);
+            tvStatus = v.findViewById(R.id.tv_budget_status);
+            tvSpent = v.findViewById(R.id.tv_budget_spent);
+            tvRemaining = v.findViewById(R.id.tv_budget_remaining);
+            progressBar = v.findViewById(R.id.progress_budget);
         }
     }
 }

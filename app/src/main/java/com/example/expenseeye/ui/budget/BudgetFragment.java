@@ -9,7 +9,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -55,7 +54,8 @@ public class BudgetFragment extends Fragment {
 
         RecyclerView recyclerView = view.findViewById(R.id.recycler_budgets);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        adapter = new BudgetAdapter(new ArrayList<>(), budget -> confirmDelete(budget));
+
+        adapter = new BudgetAdapter(new ArrayList<>(), eval -> confirmDelete(eval));
         recyclerView.setAdapter(adapter);
 
         Button btnAdd = view.findViewById(R.id.btn_add_budget);
@@ -81,6 +81,7 @@ public class BudgetFragment extends Fragment {
         View dialogView = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialog_add_budget, null);
 
+        EditText etName = dialogView.findViewById(R.id.et_budget_name);
         Spinner spinnerCategory = dialogView.findViewById(R.id.spinner_budget_category);
         EditText etLimit = dialogView.findViewById(R.id.et_budget_limit);
 
@@ -100,9 +101,19 @@ public class BudgetFragment extends Fragment {
             Button saveBtn = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             saveBtn.setOnClickListener(v -> {
 
-                // --- VALIDATION ---
-                String limitStr = etLimit.getText().toString().trim();
+                // --- NAME VALIDATION ---
+                String name = etName.getText().toString().trim();
+                if (name.isEmpty()) {
+                    etName.setError("Enter a budget name");
+                    return;
+                }
+                if (name.length() < 2) {
+                    etName.setError("Name is too short");
+                    return;
+                }
 
+                // --- LIMIT VALIDATION ---
+                String limitStr = etLimit.getText().toString().trim();
                 if (limitStr.isEmpty()) {
                     etLimit.setError("Enter a limit amount");
                     return;
@@ -115,35 +126,21 @@ public class BudgetFragment extends Fragment {
                     etLimit.setError("Enter a valid number");
                     return;
                 }
-
                 if (limit <= 0) {
                     etLimit.setError("Amount must be greater than zero");
                     return;
                 }
-
                 if (limit > 1_000_000) {
                     etLimit.setError("Amount is unrealistically large");
                     return;
                 }
 
+                // --- CATEGORY VALIDATION ---
                 Category selected = (Category) spinnerCategory.getSelectedItem();
                 if (selected == null) {
                     Toast.makeText(requireContext(),
                             "Please select a category", Toast.LENGTH_SHORT).show();
                     return;
-                }
-
-                // Prevent duplicate budgets for the same category
-                List<BudgetEvaluation> current = viewModel.getEvaluations().getValue();
-                if (current != null) {
-                    for (BudgetEvaluation be : current) {
-                        if (be.getCategoryName().equals(selected.getName())) {
-                            Toast.makeText(requireContext(),
-                                    "A budget already exists for this category",
-                                    Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                    }
                 }
 
                 // --- BUILD PERIOD (current calendar month) ---
@@ -162,11 +159,11 @@ public class BudgetFragment extends Fragment {
                 long end = cal.getTimeInMillis();
 
                 // --- SAVE ---
-                Budget budget = new Budget("",selected.getId(), limit, start, end);
+                Budget budget = new Budget(name, selected.getId(), limit, start, end);
                 viewModel.insertBudget(budget);
 
                 Toast.makeText(requireContext(),
-                        "Budget created for " + selected.getName(),
+                        "Budget \"" + name + "\" created",
                         Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             });
@@ -175,11 +172,11 @@ public class BudgetFragment extends Fragment {
         dialog.show();
     }
 
-    private void confirmDelete(Budget budget) {
+    private void confirmDelete(BudgetEvaluation eval) {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Delete Budget")
-                .setMessage("Remove this budget?")
-                .setPositiveButton("Delete", (d, w) -> viewModel.deleteBudget(budget))
+                .setMessage("Remove \"" + eval.getDisplayName() + "\"?")
+                .setPositiveButton("Delete", (d, w) -> viewModel.deleteBudgetById(eval.getBudgetId()))
                 .setNegativeButton("Cancel", null)
                 .show();
     }
