@@ -4,11 +4,14 @@ import com.example.expenseeye.data.model.Budget;
 import com.example.expenseeye.data.model.Transaction;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
-// Pure-logic class: evaluates budgets against a list of transactions.
+/**
+ * Eevaluates budgets against a list of transactions.
+ * Spending is calculated using each budget's own stored period
+ * (periodStart → periodEnd), not a hardcoded calendar month.
+ */
 public class BudgetEvaluator {
 
     public static List<BudgetEvaluation> evaluate(
@@ -31,24 +34,20 @@ public class BudgetEvaluator {
         return results;
     }
 
+    /**
+     * Sums the spending for a given budget by respecting the budget's
+     * stored period window. This makes the evaluator flexible for any
+     * future budget period (weekly, monthly, yearly, trip-based, etc.).
+     */
     private static double sumSpent(Budget budget, List<Transaction> transactions) {
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.DAY_OF_MONTH, 1);
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        long startOfMonth = cal.getTimeInMillis();
-
-        cal.add(Calendar.MONTH, 1);
-        cal.add(Calendar.MILLISECOND, -1);
-        long endOfMonth = cal.getTimeInMillis();
+        long budgetStart = budget.getPeriodStart();
+        long budgetEnd = budget.getPeriodEnd();
 
         double total = 0;
         for (Transaction t : transactions) {
             if (t.getCategoryId() == budget.getCategoryId()
-                    && t.getDate() >= startOfMonth
-                    && t.getDate() <= endOfMonth) {
+                    && t.getDate() >= budgetStart
+                    && t.getDate() <= budgetEnd) {
                 total += t.getAmount();
             }
         }
