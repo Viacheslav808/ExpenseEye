@@ -4,14 +4,16 @@ import androidx.room.ColumnInfo;
 
 public class TransactionWithDetails {
 
+    // Transaction fields
     public int id;
-
     public double amount;
-
     public String description;
-
     public long date;
 
+    public int accountId;
+    public int categoryId;
+
+    // Joined display fields
     @ColumnInfo(name = "accountName")
     public String accountName;
 

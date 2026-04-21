@@ -24,10 +24,14 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * ViewModel that exposes a reactive stream of BudgetEvaluations by
+ * combining budgets, transactions, and categories. Also handles all
+ * budget CRUD operations off the main thread.
+ */
 public class BudgetViewModel extends AndroidViewModel {
 
     private final BudgetRepo budgetRepo;
-    private final FinanceRepo financeRepo;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final LiveData<List<Budget>> budgets;
@@ -40,7 +44,7 @@ public class BudgetViewModel extends AndroidViewModel {
         super(application);
 
         budgetRepo = new BudgetRepo(application);
-        financeRepo = FinanceRepoProvider.get(application);
+        FinanceRepo financeRepo = FinanceRepoProvider.get(application);
 
         SharedPreferences prefs = application.getSharedPreferences("session", Context.MODE_PRIVATE);
         int userId = prefs.getInt("user_id", -1);
@@ -66,21 +70,7 @@ public class BudgetViewModel extends AndroidViewModel {
         }
     }
 
-    private void recompute() {
-        List<Budget> b = budgets != null ? budgets.getValue() : null;
-        List<Category> c = categories.getValue();
-        List<Transaction> t = transactions != null ? transactions.getValue() : null;
-
-        if (b == null || t == null || c == null) return;
-
-        Map<Integer, String> nameMap = new HashMap<>();
-        for (Category cat : c) {
-            nameMap.put(cat.getId(), cat.getName());
-        }
-
-        evaluations.setValue(BudgetEvaluator.evaluate(b, t, nameMap));
-    }
-
+    // Public streams
     public LiveData<List<BudgetEvaluation>> getEvaluations() {
         return evaluations;
     }
@@ -93,11 +83,46 @@ public class BudgetViewModel extends AndroidViewModel {
         return categories;
     }
 
+    // Mutations (all run off the main thread)
     public void insertBudget(Budget budget) {
         executor.execute(() -> budgetRepo.insertBudget(budget));
     }
 
+    public void updateBudget(Budget budget) {
+        executor.execute(() -> budgetRepo.updateBudget(budget));
+    }
+
     public void deleteBudget(Budget budget) {
         executor.execute(() -> budgetRepo.deleteBudget(budget));
+    }
+
+    public void deleteBudgetById(int budgetId) {
+        executor.execute(() -> {
+            List<Budget> all = budgets != null ? budgets.getValue() : null;
+            if (all == null) return;
+
+            for (Budget bg : all) {
+                if (bg.getId() == budgetId) {
+                    budgetRepo.deleteBudget(bg);
+                    return;
+                }
+            }
+        });
+    }
+
+    // Internals
+    private void recompute() {
+        List<Budget> b = budgets != null ? budgets.getValue() : null;
+        List<Transaction> t = transactions != null ? transactions.getValue() : null;
+        List<Category> c = categories.getValue();
+
+        if (b == null || t == null || c == null) return;
+
+        Map<Integer, String> nameMap = new HashMap<>();
+        for (Category cat : c) {
+            nameMap.put(cat.getId(), cat.getName());
+        }
+
+        evaluations.setValue(BudgetEvaluator.evaluate(b, t, nameMap));
     }
 }

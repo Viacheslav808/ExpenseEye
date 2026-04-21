@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
         FinanceRepo financeRepo = FinanceRepoProvider.get(getApplicationContext());
         NotificationService notificationService = financeRepo.getNotificationService();
 
-        notificationService.setBudgetAlertListener(message -> {
+        notificationService.setBudgetAlertListener((level, message) -> {
             Log.d("LOGIN_FLOW", "Login success reached");
             pendingBudgetMessage = message;
         });

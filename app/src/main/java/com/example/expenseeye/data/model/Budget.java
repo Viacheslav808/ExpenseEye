@@ -1,5 +1,7 @@
 package com.example.expenseeye.data.model;
 
+import androidx.annotation.NonNull;
+import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
 import androidx.room.Index;
@@ -35,6 +37,11 @@ public class Budget {
     private int id;
 
     private int userId;
+
+    @NonNull
+    @ColumnInfo(defaultValue = "")
+    private String name = "";
+
     private int categoryId;
     private double limitAmount;
     private long periodStart;
@@ -42,8 +49,10 @@ public class Budget {
 
     public Budget() {}
 
-    public Budget(int userId, int categoryId, double limitAmount, long periodStart, long periodEnd) {
+    public Budget(int userId, @NonNull String name, int categoryId, double limitAmount,
+                  long periodStart, long periodEnd) {
         this.userId = userId;
+        this.name = name;
         this.categoryId = categoryId;
         this.limitAmount = limitAmount;
         this.periodStart = periodStart;
@@ -64,6 +73,15 @@ public class Budget {
 
     public void setUserId(int userId) {
         this.userId = userId;
+    }
+
+    @NonNull
+    public String getName() {
+        return name;
+    }
+
+    public void setName(@NonNull String name) {
+        this.name = name;
     }
 
     public int getCategoryId() {

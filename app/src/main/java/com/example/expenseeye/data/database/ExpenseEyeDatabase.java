@@ -27,7 +27,7 @@ import java.util.concurrent.Executors;
 
 @Database(
         entities = {Account.class, Transaction.class, Category.class, User.class, Credential.class, Budget.class},
-        version = 5,
+        version = 6,
         exportSchema = false
 )
 public abstract class ExpenseEyeDatabase extends RoomDatabase {
@@ -84,7 +84,7 @@ public abstract class ExpenseEyeDatabase extends RoomDatabase {
                                     accountDao.insert(new Account(3, (int) userId, "Credit Card", 0.0));
                                 }
 
-                                // Categories remain shared/global for now
+                                // Categories remain shared/global
                                 if (categoryDao.getCountById(1) == 0) categoryDao.insert(new Category(1, "General"));
                                 if (categoryDao.getCountById(2) == 0) categoryDao.insert(new Category(2, "Food"));
                                 if (categoryDao.getCountById(3) == 0) categoryDao.insert(new Category(3, "Transport"));
